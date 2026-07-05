@@ -1,0 +1,535 @@
+// MarketMind AI — data model
+//
+// Architecture: Next.js → Prisma ORM → Supabase PostgreSQL.
+// Application code NEVER talks to Postgres directly — Prisma only.
+// Auth lives in Supabase Auth (auth.users); `Profile` mirrors it in the
+// public schema and every user-owned table is scoped by a UUID userId so
+// Supabase Row Level Security can be enabled safely (see prisma/rls.sql).
+//
+// Domain principles:
+//  • A user onboards one or more Companies (their own products).
+//  • Each Company gets AI-discovered Competitors.
+//  • Everything the platform observes is a Signal — a single, unified event
+//    stream tagged by category, severity, topic, and provenance.
+//  • Provenance matters: `isInference` distinguishes verified public facts
+//    from AI-reasoned conclusions. This flag surfaces in the UI everywhere.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // Supabase pooled connection (pgbouncer)
+  directUrl = env("DIRECT_URL") // Supabase direct connection (migrations)
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Identity — mirrors Supabase auth.users
+// ─────────────────────────────────────────────────────────────────────
+
+/// Public-schema mirror of Supabase auth.users, created lazily on first
+/// authenticated request. RLS policies compare auth.uid() with the owning
+/// row's userId. Never store credentials here — Supabase Auth owns them.
+model Profile {
+  id        String   @id @db.Uuid // = auth.users.id
+  email     String   @unique
+  name      String?
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  companies            Company[]
+  chatThreads          ChatThread[]
+  notificationChannels NotificationChannel[]
+  notificationSettings NotificationSettings?
+
+  @@map("profiles")
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Core domain
+// ─────────────────────────────────────────────────────────────────────
+
+enum AnalysisStatus {
+  PENDING
+  ANALYZING
+  COMPLETE
+  FAILED
+}
+
+/// The user's own company — the anchor for all intelligence.
+model Company {
+  id             String         @id @default(cuid())
+  userId         String         @db.Uuid
+  user           Profile        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  url            String
+  domain         String
+  name           String?
+  description    String?
+  industry       String?
+  businessModel  String?
+  targetAudience String?
+  keywords       String[]       @default([])
+  /// Full structured output of the AI Company Understanding Engine
+  analysis       Json?
+  analysisStatus AnalysisStatus @default(PENDING)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  competitors Competitor[]
+  signals     Signal[]
+  insights    Insight[]
+  reports     Report[]
+  decisions   Decision[]
+
+  @@unique([userId, domain])
+  @@index([userId])
+  @@map("companies")
+}
+
+enum CompetitorStatus {
+  SUGGESTED // discovered by AI, awaiting user confirmation
+  TRACKING // actively monitored
+  DISMISSED // user marked as not a competitor
+}
+
+model Competitor {
+  id              String           @id @default(cuid())
+  companyId       String
+  company         Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name            String
+  url             String
+  domain          String
+  logoUrl         String?
+  description     String?
+  status          CompetitorStatus @default(SUGGESTED)
+  /// 0–1: how similar this competitor is to the user's company
+  similarityScore Float?
+  /// 0–100: current threat level (latest ScoreSnapshot denormalized)
+  threatScore     Int?
+  marketPosition  String? // e.g. "Leader", "Challenger", "Niche"
+  pricingSummary  String? // e.g. "$12/mo, freemium"
+  fundingStage    String? // e.g. "Series C"
+  employeeRange   String? // e.g. "51–200"
+  /// Rich AI-built profile (products, leadership, socials, …)
+  profile         Json?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  signals        Signal[]
+  techEntries    TechStackEntry[]
+  scoreSnapshots ScoreSnapshot[]
+  insights       Insight[]
+
+  @@unique([companyId, domain])
+  @@index([companyId, status])
+  @@map("competitors")
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Signals — the unified intelligence event stream
+// ─────────────────────────────────────────────────────────────────────
+
+enum SignalCategory {
+  PRODUCT
+  PRICING
+  FUNDING
+  HIRING
+  TECHNOLOGY
+  AI_MODELS
+  ENGINEERING // GitHub activity, releases
+  MARKETING
+  SEO
+  SOCIAL
+  CUSTOMER // reviews, sentiment, feature requests
+  PARTNERSHIP
+  LEADERSHIP
+}
+
+enum SignalSeverity {
+  INFO
+  NOTABLE
+  IMPORTANT
+  CRITICAL
+}
+
+model Signal {
+  id           String         @id @default(cuid())
+  companyId    String
+  company      Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  /// Null for market-wide signals (e.g. "OpenAI released GPT-5.5")
+  competitorId String?
+  competitor   Competitor?    @relation(fields: [competitorId], references: [id], onDelete: Cascade)
+  category     SignalCategory
+  severity     SignalSeverity @default(INFO)
+  /// Fine-grained topic key for notification preferences,
+  /// e.g. "tech.openai", "competitor.pricing", "hiring.ai_engineer"
+  topic        String?
+  title        String
+  summary      String
+
+  /// Intelligence Layer output — raw events are never shown first.
+  /// "Why does this matter for MY company?"
+  whyItMatters   String?
+  /// "What should I do about it?" — always an AI recommendation.
+  recommendation String?
+
+  sourceName  String? // "Product Hunt", "GitHub", "Company Blog"
+  sourceUrl   String?
+  /// false = verified public fact; true = AI-reasoned conclusion
+  isInference Boolean  @default(false)
+  /// 0–1 model confidence when isInference is true
+  confidence  Float?
+  raw         Json?
+  detectedAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  @@index([companyId, detectedAt])
+  @@index([competitorId, category])
+  @@map("signals")
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Technology & AI intelligence
+// ─────────────────────────────────────────────────────────────────────
+
+enum TechCategory {
+  FRONTEND
+  BACKEND
+  DATABASE
+  CLOUD
+  DEVOPS
+  AI
+  ANALYTICS
+  OTHER
+}
+
+model TechStackEntry {
+  id           String       @id @default(cuid())
+  competitorId String
+  competitor   Competitor   @relation(fields: [competitorId], references: [id], onDelete: Cascade)
+  category     TechCategory
+  name         String // "Next.js", "Postgres", "OpenAI GPT-4o"
+  confidence   Float        @default(0.5)
+  isInference  Boolean      @default(true)
+  active       Boolean      @default(true)
+  firstSeenAt  DateTime     @default(now())
+  lastSeenAt   DateTime     @default(now())
+
+  @@unique([competitorId, name])
+  @@index([competitorId, category])
+  @@map("tech_stack_entries")
+}
+
+enum AiUpdateKind {
+  MODEL_RELEASE
+  PRICING
+  API_CHANGE
+  SDK_UPDATE
+  CAPABILITY // memory, voice, tool calling, MCP, …
+  DEPRECATION
+}
+
+/// Market-wide AI ecosystem tracking (OpenAI, Gemini, Claude, Groq, …).
+/// Not tied to a user — shared, read-only reference data.
+model AiProviderUpdate {
+  id          String       @id @default(cuid())
+  provider    String // "OpenAI", "Anthropic", "Google", "Groq", …
+  kind        AiUpdateKind
+  title       String
+  summary     String
+  sourceUrl   String?
+  publishedAt DateTime
+  createdAt   DateTime     @default(now())
+
+  @@index([provider, publishedAt])
+  @@map("ai_provider_updates")
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Scoring & strategy
+// ─────────────────────────────────────────────────────────────────────
+
+/// Point-in-time threat/opportunity scoring with full breakdown,
+/// enabling historical trend charts.
+model ScoreSnapshot {
+  id               String     @id @default(cuid())
+  competitorId     String
+  competitor       Competitor @relation(fields: [competitorId], references: [id], onDelete: Cascade)
+  threatScore      Int // 0–100
+  opportunityScore Int? // 0–100
+  /// Per-factor contributions: growth, funding, hiring, tech, features, …
+  breakdown        Json
+  capturedAt       DateTime   @default(now())
+
+  @@index([competitorId, capturedAt])
+  @@map("score_snapshots")
+}
+
+enum InsightType {
+  OPPORTUNITY
+  GAP
+  SWOT
+  STRATEGY
+}
+
+enum ImpactLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+/// AI-generated strategic conclusions: opportunities, gap analyses,
+/// SWOT entries, and recommendations. Always inferences by definition.
+model Insight {
+  id           String      @id @default(cuid())
+  companyId    String
+  company      Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  competitorId String?
+  competitor   Competitor? @relation(fields: [competitorId], references: [id], onDelete: SetNull)
+  type         InsightType
+  title        String
+  body         String
+  impact       ImpactLevel @default(MEDIUM)
+  priority    Int         @default(0)
+  data        Json?
+  dismissed   Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+
+  @@index([companyId, type])
+  @@map("insights")
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Reports
+// ─────────────────────────────────────────────────────────────────────
+
+enum ReportType {
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+}
+
+model Report {
+  id               String     @id @default(cuid())
+  companyId        String
+  company          Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  type             ReportType
+  title            String
+  executiveSummary String
+  /// Structured sections: SWOT, landscape, threats, tech trends, actions
+  content          Json
+  /// Supabase Storage path for the exported PDF (bucket: "reports")
+  pdfPath          String?
+  periodStart      DateTime
+  periodEnd        DateTime
+  createdAt        DateTime   @default(now())
+
+  @@index([companyId, type, createdAt])
+  @@map("reports")
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Decision Memory (docs 14–15)
+// ─────────────────────────────────────────────────────────────────────
+
+enum DecisionStatus {
+  CONSIDERING // open question in the Decision Workspace
+  DECIDED
+  REVISIT // revisitAt reached or market evidence contradicts rationale
+  REVERSED
+}
+
+enum DecisionOutcome {
+  PENDING
+  VALIDATED
+  MIXED
+  REGRETTED
+}
+
+/// A recorded strategic decision: what was decided, why, on what evidence,
+/// what was rejected — and whether the market later proved it right.
+/// Only the founder changes status/outcome; the AI recommends and reminds.
+model Decision {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  title   String // the question/decision
+  context String // situation at decision time — written for the future reader
+
+  choice    String? // what was decided (null while CONSIDERING)
+  rationale String? // why — the argument that won
+
+  /// Rejected options: [{ "option": string, "reason": string }]
+  alternatives Json?
+  /// Grounding refs, ownership-validated by the service:
+  /// [{ "type": "signal" | "insight", "id": string }]
+  evidence     Json?
+
+  status       DecisionStatus  @default(CONSIDERING)
+  outcome      DecisionOutcome @default(PENDING)
+  outcomeNotes String?
+
+  decidedAt DateTime?
+  /// When to re-evaluate; the decision-revisit job flags it (doc 15)
+  revisitAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyId, status])
+  @@index([revisitAt])
+  @@map("decisions")
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// AI Chat
+// ─────────────────────────────────────────────────────────────────────
+
+enum ChatRole {
+  USER
+  ASSISTANT
+  SYSTEM
+  TOOL
+}
+
+model ChatThread {
+  id        String   @id @default(cuid())
+  userId    String   @db.Uuid
+  user      Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String   @default("New conversation")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages ChatMessage[]
+
+  @@index([userId, updatedAt])
+  @@map("chat_threads")
+}
+
+model ChatMessage {
+  id        String     @id @default(cuid())
+  threadId  String
+  thread    ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  role      ChatRole
+  content   String
+  /// Citations back to Signals/Insights used to ground the answer
+  sources   Json?
+  createdAt DateTime   @default(now())
+
+  @@index([threadId, createdAt])
+  @@map("chat_messages")
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Notifications
+// ─────────────────────────────────────────────────────────────────────
+
+enum ChannelType {
+  EMAIL
+  TELEGRAM
+  SLACK
+  DISCORD
+  WHATSAPP
+  PUSH
+}
+
+enum DigestFrequency {
+  DAILY
+  WEEKDAYS
+  WEEKLY
+  MONTHLY
+  INSTANT_ONLY // no digest — instant alerts only
+}
+
+/// A delivery destination with its own schedule and content filter.
+/// Users may run several simultaneously (e.g. email daily digest at
+/// 08:00 + Telegram instant criticals).
+model NotificationChannel {
+  id      String      @id @default(cuid())
+  userId  String      @db.Uuid
+  user    Profile     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type    ChannelType
+  /// Channel-specific config: { email } | { chatId } | { webhookUrl }
+  config  Json
+  enabled Boolean     @default(true)
+
+  // Schedule — HH:MM precision in the user's timezone (NotificationSettings)
+  frequency    DigestFrequency @default(DAILY)
+  /// "HH:MM" 24-hour local delivery time, minute precision
+  deliveryTime String          @default("08:00")
+  /// 1 (Mon) – 7 (Sun); only for WEEKLY
+  weeklyDay    Int?
+  /// 1–28; only for MONTHLY
+  monthlyDay   Int?
+
+  // Content filter
+  /// Minimum severity: INFO = everything … CRITICAL = critical only
+  priorityThreshold SignalSeverity @default(INFO)
+  /// Selected topic keys (see features/notifications/types.ts); empty = all
+  topics            String[]       @default([])
+  /// Also deliver IMPORTANT/CRITICAL events the moment they happen
+  instantAlerts     Boolean        @default(false)
+
+  /// Watermark: signals after this time go into the next digest
+  lastDigestAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  logs NotificationLog[]
+
+  @@index([userId])
+  @@index([enabled, frequency])
+  @@map("notification_channels")
+}
+
+/// User-level delivery rules that apply across every channel.
+model NotificationSettings {
+  id     String  @id @default(cuid())
+  userId String  @unique @db.Uuid
+  user   Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// IANA timezone, e.g. "Asia/Kolkata" — DST handled by Intl at runtime
+  timezone String @default("UTC")
+
+  /// "HH:MM" — instant alerts are held during quiet hours (may wrap midnight)
+  quietHoursStart String?
+  quietHoursEnd   String?
+  /// CRITICAL alerts may break through quiet hours if the user opts in
+  criticalOverridesQuiet Boolean @default(false)
+
+  weekendPause  Boolean   @default(false)
+  /// All delivery paused until this instant (vacation mode)
+  vacationUntil DateTime?
+  /// Short-term snooze
+  snoozeUntil   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("notification_settings")
+}
+
+enum DeliveryStatus {
+  QUEUED
+  SENT
+  FAILED
+}
+
+model NotificationLog {
+  id        String              @id @default(cuid())
+  channelId String
+  channel   NotificationChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  subject   String
+  body      String
+  status    DeliveryStatus      @default(QUEUED)
+  error     String?
+  sentAt    DateTime?
+  createdAt DateTime            @default(now())
+
+  @@index([channelId, createdAt])
+  @@map("notification_logs")
+}

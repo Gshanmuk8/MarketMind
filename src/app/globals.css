@@ -1,0 +1,153 @@
+@import "tailwindcss";
+
+/* ────────────────────────────────────────────────────────────────────
+   MarketMind AI — "Atelier" Design Tokens
+   Light-only, editorial, engineered. Warm paper, ink typography,
+   hairline rules. Color is information, not decoration.
+   ──────────────────────────────────────────────────────────────────── */
+
+@theme {
+  /* "Pressroom" — true ink on gallery white, one vermilion signature.
+     High contrast, print-shop confidence — nothing pastel, nothing soft. */
+  --color-background: #f3f3ef; /* gallery white page */
+  --color-surface: #ffffff; /* paper panels */
+  --color-surface-raised: #e9e9e3; /* stone hover */
+  --color-surface-overlay: #ffffff; /* modals, palettes */
+  --color-ink-wash: #101010; /* inverted blocks (buttons, footers) */
+
+  /* Rules — visible, deliberate, like a printed grid */
+  --color-border: #d9d9d2;
+  --color-border-strong: #101010; /* strong rules are INK, not gray */
+
+  /* Ink */
+  --color-foreground: #101010; /* true ink */
+  --color-muted: #55554f; /* graphite */
+  --color-faint: #90908a; /* stone */
+
+  /* Accents — one loud signature, few quiet specialists */
+  --color-accent: #c2410c; /* vermilion — primary, positive, the red dot */
+  --color-accent-dim: #c2410c1a;
+  --color-live: #0c6b62; /* deep teal — live data, links */
+  --color-inference: #6d6d75; /* zinc — AI inference (trust tier 2) */
+  --color-score: #1c4b8f; /* cobalt — scores */
+  --color-warning: #a16207; /* dark amber — warnings only */
+  --color-critical: #9f1239; /* crimson — critical only */
+
+  /* Typography */
+  --font-display: "Kawoszeh", var(--font-marcellus), "Iowan Old Style", Georgia, serif;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+
+  /* Radii — soft, architectural */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1.25rem;
+  --radius-xl: 2rem;
+
+  /* Shadow — nearly invisible, overlays only */
+  --shadow-soft: 0 1px 2px rgb(33 31 27 / 0.04), 0 8px 24px -12px rgb(33 31 27 / 0.12);
+
+  /* Motion */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Keyframes (registered for Tailwind animate-* utilities) */
+  --animate-rise: rise 0.6s var(--ease-out-expo) both;
+}
+
+/* Kawoszeh (OFL, by gluk) — activates when the file exists at
+   public/fonts/Kawoszeh.ttf; Marcellus carries the identity otherwise. */
+@font-face {
+  font-family: "Kawoszeh";
+  src: url("/fonts/Kawoszeh.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Base */
+html {
+  color-scheme: light;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.005em;
+}
+
+/* Numeric data always in mono with tabular figures */
+.font-data {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The system's quiet signature: mono uppercase eyebrows */
+.microlabel {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-faint);
+}
+
+/* Hairline rule — sections separate with lines, not boxes */
+.rule {
+  border: 0;
+  border-top: 1px solid var(--color-border);
+}
+
+/* Soft entrance — content settles onto the page */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rise {
+  animation: rise 0.6s var(--ease-out-expo) both;
+}
+
+.rise-1 { animation-delay: 60ms; }
+.rise-2 { animation-delay: 120ms; }
+.rise-3 { animation-delay: 180ms; }
+.rise-4 { animation-delay: 240ms; }
+.rise-5 { animation-delay: 300ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Scrollbars that match the paper */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
+}
+
+::selection {
+  background: #fbdccd; /* pale vermilion */
+  color: var(--color-foreground);
+}
