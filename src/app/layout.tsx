@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
-import { Inter, Marcellus, JetBrains_Mono } from "next/font/google";
+import { Inter, Instrument_Serif, JetBrains_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
 import "./globals.css";
 
-// Display fallback for Kawoszeh (loaded via @font-face when the TTF is
-// present in public/fonts) — Marcellus carries the identity until then.
-const marcellus = Marcellus({
+// Free stand-in for the luxury editorial faces (Canela/Editorial New lead
+// the CSS stack and render automatically wherever they're installed).
+const instrument = Instrument_Serif({
   subsets: ["latin"],
   weight: "400",
-  variable: "--font-marcellus",
+  variable: "--font-instrument",
 });
 
 const inter = Inter({
@@ -36,7 +36,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${marcellus.variable} ${inter.variable} ${jetbrainsMono.variable}`}
+      className={`${instrument.variable} ${inter.variable} ${jetbrainsMono.variable}`}
     >
       <body className="min-h-dvh bg-background text-foreground antialiased">
         <Providers>{children}</Providers>

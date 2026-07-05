@@ -8,28 +8,28 @@ MarketMind AI is set like a **privately printed intelligence briefing**: warm pa
 
 ## Theme
 
-**Light only** (owner decision, 2026-07 — supersedes the former dark-only rule). Paper depth scale — "Pressroom": `background` #F3F3EF (gallery white) → `surface` #FFFFFF (paper panels) → `surface-raised` (stone hover) → `surface-overlay` (white, modals). Rules: `border` (light) / `border-strong` (TRUE INK #101010 — strong rules are ink, not gray). Text selection is pale vermilion. Shadows nearly invisible, overlays only.
+**Light only** (owner decision, 2026-07 — supersedes the former dark-only rule). Paper depth scale — "Warm Editorial": `background` #F7F4ED (ivory) → `surface` #EEE8DD (bone panels) → `surface-raised` (olive-mist wash hover) → `surface-overlay` (warm white, modals). Rules: `border` (light) / `border-strong` (CHARCOAL #232323 — strong rules are ink, not gray). Text selection is champagne. Shadows nearly invisible, overlays only.
 
 ## Color is information, not decoration
 
-"Pressroom" palette (owner recolor, 2026-07): true ink on gallery white with ONE loud signature — vermilion. High-contrast, print-shop confidence; supporting hues are quiet specialists. Nothing pastel, nothing SaaS.
+"Warm Editorial" palette (owner recolor, 2026-07): charcoal ink on ivory/bone with a burnt-umber signature and olive mist as the quiet secondary. Museum-grade and uncommon; supporting hues are rare specialists (soft gold, sepia, oxide red, pewter). Nothing neon, nothing SaaS.
 
 | Token | Hue | Meaning — use for nothing else |
 | --- | --- | --- |
-| `foreground` | true ink (#101010) | primary text |
-| `accent` | vermilion | primary actions, positive state — the red dot |
-| `live` | deep teal | live data, links |
-| `inference` | zinc | **AI inference** markers (trust tier 2) |
-| `score` | cobalt | scores (also the ledger rules on key figures) |
-| `warning` | dark amber | warnings only |
-| `critical` | crimson | critical alerts only |
+| `foreground` | charcoal (#232323) | primary text |
+| `accent` | burnt umber | primary actions, positive state |
+| `live` | olive mist (deepened) | live data, links |
+| `inference` | pewter | **AI inference** markers (trust tier 2) |
+| `score` | soft gold | scores (also the ledger rules on key figures) |
+| `warning` | sepia | warnings only |
+| `critical` | oxide red | critical alerts only |
 | `muted` / `faint` | graphite / stone | secondary / tertiary text |
 
 Color appears in hairline accents, small marks, and type — never in floods. Banned: gradients as decoration, glassmorphism, neumorphism, glows.
 
 ## Typography — the identity
 
-- **Display: Kawoszeh** (`font-display`, via `@font-face` from `public/fonts/Kawoszeh.ttf`; guaranteed fallback: Marcellus) — for page titles, numerals of consequence, and the wordmark. Large, unhurried.
+- **Display: editorial/luxury serif stack** (`font-display`): Canela → Editorial New → Noe Display when installed; **Instrument Serif** (bundled via next/font) is the guaranteed web face — for page titles, numerals of consequence, and the wordmark. Large, unhurried.
 - **Body/UI: Inter** (`font-sans`) — quiet, precise.
 - **Data: JetBrains Mono** (`.font-data`, tabular) — every score, count, time, ID.
 - **Microlabels** (`.microlabel`): mono, uppercase, 10–11px, letter-spacing 0.16em, `text-faint` — section eyebrows, index numbers, column headers. The system's quiet signature.

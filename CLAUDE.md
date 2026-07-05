@@ -23,9 +23,9 @@ Every feature must pass the manifesto's test (`docs/01-product-manifesto.md`): "
 
 ## Design system — "Atelier" (light, editorial)
 
-- Light theme only (owner decision, 2026-07). "Pressroom" palette — true ink on gallery white, vermilion signature, Kawoszeh (fallback Marcellus) display serif; tokens live in `src/app/globals.css` `@theme` — use token classes (`bg-surface`, `text-muted`, `border-border`, `text-accent`), never raw hex in components.
-- Color is semantic and sparse: vermilion (`accent`) = primary/positive, deep teal (`live`) = live data/links, cobalt (`score`) = scores, dark amber (`warning`) = warnings only, crimson (`critical`) = critical only, zinc (`inference`) = AI inferences. No blue floods/neon; no gradients, glass, or glows.
-- Typography: Kawoszeh (fallback Marcellus) for display headings (`font-display`), Inter body, JetBrains Mono for numbers (`.font-data`, tabular) and `.microlabel` eyebrows.
+- Light theme only (owner decision, 2026-07). "Warm Editorial" palette — ivory/bone, charcoal ink, burnt umber signature, Instrument Serif display (Canela/Editorial New lead the stack); tokens live in `src/app/globals.css` `@theme` — use token classes (`bg-surface`, `text-muted`, `border-border`, `text-accent`), never raw hex in components.
+- Color is semantic and sparse: burnt umber (`accent`) = primary/positive, deep olive mist (`live`) = live data/links, soft gold (`score`) = scores, sepia (`warning`) = warnings only, oxide red (`critical`) = critical only, pewter (`inference`) = AI inferences. No blue floods/neon; no gradients, glass, or glows.
+- Typography: Instrument Serif (Canela-class editorial) for display headings (`font-display`), Inter body, JetBrains Mono for numbers (`.font-data`, tabular) and `.microlabel` eyebrows.
 - Editorial layout: hairline rules and whitespace over boxes; numbered index navigation; museum spacing (see docs 16–17).
 - Every list/detail screen needs proper loading (Skeleton), empty (EmptyState), and error states.
 

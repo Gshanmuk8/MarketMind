@@ -7,34 +7,34 @@
    ──────────────────────────────────────────────────────────────────── */
 
 @theme {
-  /* "Pressroom" — true ink on gallery white, one vermilion signature.
-     High contrast, print-shop confidence — nothing pastel, nothing soft. */
-  --color-background: #f3f3ef; /* gallery white page */
-  --color-surface: #ffffff; /* paper panels */
-  --color-surface-raised: #e9e9e3; /* stone hover */
-  --color-surface-overlay: #ffffff; /* modals, palettes */
-  --color-ink-wash: #101010; /* inverted blocks (buttons, footers) */
+  /* "Warm Editorial" — ivory & bone, charcoal ink, burnt umber signature,
+     olive mist as the quiet secondary. Museum-grade, uncommon, warm. */
+  --color-background: #f7f4ed; /* ivory page */
+  --color-surface: #eee8dd; /* bone panels */
+  --color-surface-raised: #e4e6d8; /* olive-mist wash hover */
+  --color-surface-overlay: #fbf9f4; /* modals, palettes */
+  --color-ink-wash: #232323; /* inverted blocks (buttons, footers) */
 
-  /* Rules — visible, deliberate, like a printed grid */
-  --color-border: #d9d9d2;
-  --color-border-strong: #101010; /* strong rules are INK, not gray */
+  /* Rules — strong rules draw in charcoal, like a printed grid */
+  --color-border: #ddd5c7;
+  --color-border-strong: #232323;
 
   /* Ink */
-  --color-foreground: #101010; /* true ink */
-  --color-muted: #55554f; /* graphite */
-  --color-faint: #90908a; /* stone */
+  --color-foreground: #232323; /* charcoal */
+  --color-muted: #5c584f; /* warm graphite */
+  --color-faint: #8f8a7d; /* putty */
 
-  /* Accents — one loud signature, few quiet specialists */
-  --color-accent: #c2410c; /* vermilion — primary, positive, the red dot */
-  --color-accent-dim: #c2410c1a;
-  --color-live: #0c6b62; /* deep teal — live data, links */
-  --color-inference: #6d6d75; /* zinc — AI inference (trust tier 2) */
-  --color-score: #1c4b8f; /* cobalt — scores */
-  --color-warning: #a16207; /* dark amber — warnings only */
-  --color-critical: #9f1239; /* crimson — critical only */
+  /* Accents — burnt umber signature, rare specialists */
+  --color-accent: #8b5e3c; /* burnt umber — primary, positive */
+  --color-accent-dim: #8b5e3c1f;
+  --color-live: #667052; /* olive mist, deepened text-safe — live data, links */
+  --color-inference: #7d7a72; /* pewter — AI inference (trust tier 2) */
+  --color-score: #9c813f; /* soft gold — scores */
+  --color-warning: #8a6a2b; /* sepia — warnings only */
+  --color-critical: #9b4a3f; /* oxide red — critical only */
 
-  /* Typography */
-  --font-display: "Kawoszeh", var(--font-marcellus), "Iowan Old Style", Georgia, serif;
+  /* Typography — editorial/luxury stack; commercial faces render when installed */
+  --font-display: "Canela", "Editorial New", "Noe Display", var(--font-instrument), Georgia, serif;
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
 
@@ -52,16 +52,6 @@
 
   /* Keyframes (registered for Tailwind animate-* utilities) */
   --animate-rise: rise 0.6s var(--ease-out-expo) both;
-}
-
-/* Kawoszeh (OFL, by gluk) — activates when the file exists at
-   public/fonts/Kawoszeh.ttf; Marcellus carries the identity otherwise. */
-@font-face {
-  font-family: "Kawoszeh";
-  src: url("/fonts/Kawoszeh.ttf") format("truetype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
 }
 
 /* Base */
@@ -148,6 +138,6 @@ h4 {
 }
 
 ::selection {
-  background: #fbdccd; /* pale vermilion */
+  background: #ecdfc3; /* champagne */
   color: var(--color-foreground);
 }
