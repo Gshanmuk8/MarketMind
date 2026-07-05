@@ -45,6 +45,17 @@ const envSchema = z.object({
   EMAIL_FROM: z.string().default("MarketMind AI <onboarding@resend.dev>"),
 });
 
-export const env = envSchema.parse(process.env);
+const parsed = envSchema.safeParse(process.env);
+if (!parsed.success) {
+  // Deploy logs must name the exact offender — a raw ZodError is unreadable.
+  const details = parsed.error.issues
+    .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
+    .join(" · ");
+  throw new Error(
+    `[env] Invalid or missing environment variables → ${details}. ` +
+      `Set them in your host's environment settings (values WITHOUT quotes), then redeploy.`
+  );
+}
+export const env = parsed.data;
 
 export type Env = z.infer<typeof envSchema>;
