@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { db } from "@/lib/db";
 
@@ -30,11 +31,28 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     null;
   const avatarUrl = (user.user_metadata?.avatar_url as string | undefined) ?? null;
 
-  await db.profile.upsert({
-    where: { id: user.id },
-    create: { id: user.id, email: user.email, name, avatarUrl },
-    update: { email: user.email, name, avatarUrl },
-  });
+  try {
+    await db.profile.upsert({
+      where: { id: user.id },
+      create: { id: user.id, email: user.email, name, avatarUrl },
+      update: { email: user.email, name, avatarUrl },
+    });
+  } catch (error) {
+    // Same email, different auth id: the user was deleted and re-created in
+    // Supabase Auth. Re-link the existing profile (and, via cascade, all its
+    // data) to the new auth identity instead of crashing on unique(email).
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      await db.profile.update({
+        where: { email: user.email },
+        data: { id: user.id, name, avatarUrl },
+      });
+    } else {
+      throw error;
+    }
+  }
 
   return { id: user.id, email: user.email, name };
 }
