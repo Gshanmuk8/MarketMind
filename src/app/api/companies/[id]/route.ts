@@ -49,6 +49,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         db.signal.deleteMany({ where: { companyId: id } }),
         db.insight.deleteMany({ where: { companyId: id } }),
         db.report.deleteMany({ where: { companyId: id } }),
+        // The old market's conversation would poison the strategist's
+        // grounding — a new company starts with fresh counsel.
+        db.chatThread.deleteMany({ where: { userId: user.id } }),
         db.company.update({
           where: { id },
           data: {

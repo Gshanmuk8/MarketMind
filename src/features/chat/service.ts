@@ -87,7 +87,9 @@ export async function askStrategist(userId: string, question: string) {
           "You are the founder's strategy analyst. Answer ONLY from the provided intelligence; when you rely on a " +
           "signal or competitor, cite it inline as [S:id] or [C:id]. If the intelligence doesn't cover the question, " +
           "say so plainly — never invent facts. Recommendations must be labeled as recommendations. Be concise and " +
-          "direct: a founder's time is the scarcest resource.\n\n" +
+          "direct: a founder's time is the scarcest resource. " +
+          "The COMPANY/COMPETITORS/SIGNALS below are the CURRENT truth — if earlier conversation messages describe a " +
+          "different company, the user has since switched companies; disregard that history entirely.\n\n" +
           grounding,
       },
       ...history.reverse().map((m) => ({
