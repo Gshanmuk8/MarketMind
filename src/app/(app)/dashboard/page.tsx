@@ -60,11 +60,17 @@ export default async function DashboardPage() {
       />
 
       {analyzing && (
-        <div className="rise mb-10 flex items-center gap-3 border-b border-border pb-8">
-          <span aria-hidden className="size-1.5 animate-pulse bg-accent" />
-          <p className="text-sm text-muted">
-            Analysis in progress — your competitive landscape is being mapped. This page fills in
-            as results land.
+        <div className="rise mb-10 border-b border-border pb-8">
+          <div className="flex items-center gap-3">
+            <span aria-hidden className="size-2 animate-pulse rounded-full bg-accent" />
+            <p className="font-sans text-sm font-medium">
+              Fetching your company — please wait
+            </p>
+          </div>
+          <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted">
+            We&apos;re reading your website, understanding your product, and discovering your
+            competitors. This usually takes <span className="font-data">1–3 minutes</span> — the
+            page updates itself, no need to reload.
           </p>
         </div>
       )}
