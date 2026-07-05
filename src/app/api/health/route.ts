@@ -7,7 +7,9 @@ export async function GET() {
   try {
     await db.$queryRaw`SELECT 1`;
   } catch (error) {
-    database = `error: ${error instanceof Error ? error.message.split("\n")[0] : "unknown"}`;
+    database = `error: ${
+      error instanceof Error ? error.message.replace(/\s+/g, " ").trim().slice(0, 220) : "unknown"
+    }`;
   }
   return NextResponse.json(
     { status: "ok", service: "marketmind-ai", database },
