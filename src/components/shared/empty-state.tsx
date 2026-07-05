@@ -20,7 +20,7 @@ export function EmptyState({
   action,
 }: EmptyStateProps) {
   return (
-    <div className="rise flex min-h-[380px] flex-col items-center justify-center px-6 py-20 text-center">
+    <div className="rise flex min-h-[300px] flex-col items-center justify-center px-4 py-14 text-center sm:min-h-[380px] sm:px-6 sm:py-20">
       <div
         aria-hidden
         className="mb-8 flex size-14 items-center justify-center rounded-full border border-border bg-surface"

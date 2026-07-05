@@ -42,7 +42,7 @@ export function FolioBar() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur-sm">
-      <div className="flex h-14 items-center justify-between gap-6 px-6 lg:px-10">
+      <div className="flex h-14 items-center justify-between gap-3 px-4 sm:gap-6 sm:px-6 lg:px-10">
         <div className="flex items-baseline gap-4">
           <Link href="/dashboard" className="font-display text-base text-foreground lg:hidden">
             MarketMind
@@ -59,7 +59,7 @@ export function FolioBar() {
           >
             <Search className="size-3.5" strokeWidth={1.5} />
             <span className="hidden sm:inline">Search</span>
-            <kbd className="font-data text-[10px] text-faint">⌘K</kbd>
+            <kbd className="hidden font-data text-[10px] text-faint sm:inline">⌘K</kbd>
           </button>
           <div
             className="flex size-8 items-center justify-center rounded-full border border-border-strong bg-surface font-display text-sm text-foreground"
@@ -73,7 +73,7 @@ export function FolioBar() {
       {/* Compact contents strip for small screens */}
       <nav
         aria-label="Primary"
-        className="flex gap-5 overflow-x-auto border-t border-border px-6 py-2 lg:hidden"
+        className="flex gap-5 overflow-x-auto border-t border-border px-4 py-2 sm:px-6 lg:hidden"
       >
         {allNav.map((item) => {
           const active = pathname === item.href || pathname.startsWith(`${item.href}/`);

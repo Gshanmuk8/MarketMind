@@ -86,9 +86,9 @@ export function SettingsView() {
             <span className="text-sm text-muted">Name</span>
             <span className="text-sm">{(user?.user_metadata?.full_name as string) ?? "—"}</span>
           </div>
-          <div className="flex items-baseline justify-between border-b border-border py-4">
+          <div className="flex items-baseline justify-between gap-4 border-b border-border py-4">
             <span className="text-sm text-muted">Email</span>
-            <span className="font-data text-sm">{user?.email ?? "—"}</span>
+            <span className="break-all text-right font-data text-sm">{user?.email ?? "—"}</span>
           </div>
         </div>
         <Button variant="secondary" size="sm" className="mt-5" onClick={handleSignOut}>
@@ -127,7 +127,7 @@ export function SettingsView() {
                 )}
                 {editingId === company.id && (
                   <form
-                    className="mt-4 flex items-center gap-2"
+                    className="mt-4 flex flex-wrap items-center gap-2"
                     onSubmit={(e) => {
                       e.preventDefault();
                       if (
@@ -155,7 +155,7 @@ export function SettingsView() {
                     </Button>
                   </form>
                 )}
-                <div className="mt-4 flex items-center gap-2">
+                <div className="mt-4 flex flex-wrap items-center gap-2">
                   <Button
                     variant="secondary"
                     size="sm"

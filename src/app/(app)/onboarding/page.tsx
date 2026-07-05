@@ -11,7 +11,7 @@ export default function OnboardingPage() {
   return (
     <div className="rise mx-auto flex min-h-[70vh] max-w-xl flex-col justify-center">
       <p className="microlabel mb-6 text-center">Begin the briefing</p>
-      <h1 className="text-center text-4xl leading-snug">
+      <h1 className="text-center text-3xl leading-snug sm:text-4xl">
         What&apos;s your company?
       </h1>
       <p className="mt-4 text-center leading-relaxed text-muted">

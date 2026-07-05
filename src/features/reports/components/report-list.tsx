@@ -67,7 +67,7 @@ export function ReportList() {
 
   return (
     <div className="rise">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <p className="microlabel">{reports.length} in the record</p>
         <div className="flex items-center gap-3">
           {notice && <p className="text-xs text-muted">{notice}</p>}

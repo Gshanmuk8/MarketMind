@@ -36,7 +36,7 @@ export default async function CompetitorProfilePage({
         )}
       </PageHeader>
 
-      <div className="grid grid-cols-1 gap-14 lg:grid-cols-12">
+      <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-14">
         {/* Annotation column */}
         <aside className="rise lg:col-span-4">
           {competitor.description && (

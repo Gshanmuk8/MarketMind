@@ -22,7 +22,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
         <span className="microlabel mt-2 block">Competitive Intelligence</span>
       </Link>
 
-      <div className="rise w-full max-w-sm rounded-lg border border-border bg-surface p-8">
+      <div className="rise w-full max-w-sm rounded-lg border border-border bg-surface p-6 sm:p-8">
         {children}
       </div>
 

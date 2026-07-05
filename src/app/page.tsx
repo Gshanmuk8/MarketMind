@@ -61,10 +61,10 @@ export default async function LandingPage({
 
       {/* Cover */}
       <section className="mx-auto max-w-6xl px-6 lg:px-10">
-        <div className="grid grid-cols-1 gap-16 py-24 lg:grid-cols-12 lg:py-32">
+        <div className="grid grid-cols-1 gap-16 py-16 sm:py-24 lg:grid-cols-12 lg:py-32">
           <div className="rise lg:col-span-7">
             <p className="microlabel mb-8">A briefing, not a dashboard</p>
-            <h1 className="text-5xl leading-[1.08] sm:text-6xl lg:text-7xl">
+            <h1 className="text-4xl leading-[1.08] sm:text-6xl lg:text-7xl">
               Know your market before&nbsp;it&nbsp;moves.
             </h1>
             <p className="mt-8 max-w-md text-lg leading-relaxed text-muted">
@@ -106,7 +106,7 @@ export default async function LandingPage({
 
       {/* Specimen — one signal, typeset as it arrives in the product */}
       <section className="border-t border-border bg-surface">
-        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-12 px-6 py-24 lg:grid-cols-12 lg:px-10">
+        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-12 px-6 py-16 sm:py-24 lg:grid-cols-12 lg:px-10">
           <div className="lg:col-span-4">
             <p className="microlabel mb-4">Specimen</p>
             <h2 className="text-3xl leading-snug">
@@ -119,7 +119,7 @@ export default async function LandingPage({
           </div>
 
           <article className="rise lg:col-span-7 lg:col-start-6">
-            <div className="rounded-lg border border-border bg-surface-overlay p-8 lg:p-10">
+            <div className="rounded-lg border border-border bg-surface-overlay p-6 sm:p-8 lg:p-10">
               <div className="flex flex-wrap items-center gap-3">
                 <p className="microlabel">Signal · Competitor pricing</p>
                 <Badge variant="critical">Important</Badge>
@@ -157,8 +157,8 @@ export default async function LandingPage({
 
       {/* Close */}
       <section className="border-t border-border">
-        <div className="mx-auto flex max-w-6xl flex-col items-start gap-8 px-6 py-24 lg:px-10">
-          <h2 className="max-w-2xl text-4xl leading-snug">
+        <div className="mx-auto flex max-w-6xl flex-col items-start gap-8 px-6 py-16 sm:py-24 lg:px-10">
+          <h2 className="max-w-2xl text-3xl leading-snug sm:text-4xl">
             The first thing you open every morning.
           </h2>
           <Link
@@ -173,7 +173,7 @@ export default async function LandingPage({
 
       {/* Colophon */}
       <footer className="border-t border-border">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-8 lg:px-10">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-8 lg:px-10">
           <p className="microlabel">{siteConfig.name} — {siteConfig.tagline}</p>
           <p className="microlabel">Public sources only</p>
         </div>
