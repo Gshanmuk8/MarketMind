@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { signInWithEmail, signInWithOAuth } = useAuth();
+  const { signInWithEmail } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -34,35 +34,7 @@ export default function LoginPage() {
       <h1 className="text-2xl">Welcome back</h1>
       <p className="mt-2 text-sm text-muted">Sign in to your intelligence workspace.</p>
 
-      <div className="mt-6 grid grid-cols-2 gap-3">
-        <Button
-          variant="secondary"
-          onClick={async () => {
-            const { error } = await signInWithOAuth("google");
-            if (error) setError(error.message);
-          }}
-        >
-          Google
-        </Button>
-        <Button
-          variant="secondary"
-          onClick={async () => {
-            const { error } = await signInWithOAuth("github");
-            if (error) setError(error.message);
-          }}
-        >
-          GitHub
-        </Button>
-      </div>
-      {error && <p className="mt-3 text-xs leading-relaxed text-critical">{error}</p>}
-
-      <div className="my-6 flex items-center gap-3 text-xs text-faint">
-        <span className="h-px flex-1 bg-border" />
-        or continue with email
-        <span className="h-px flex-1 bg-border" />
-      </div>
-
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+      <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-3">
         <Input
           type="email"
           placeholder="you@company.com"
@@ -77,6 +49,7 @@ export default function LoginPage() {
           onChange={(e) => setPassword(e.target.value)}
           required
         />
+        {error && <p className="text-xs leading-relaxed text-critical">{error}</p>}
         <Button type="submit" disabled={loading}>
           {loading ? "Signing in…" : "Sign in"}
         </Button>

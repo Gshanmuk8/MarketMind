@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 
 export default function SignupPage() {
   const router = useRouter();
-  const { signUpWithEmail, signInWithOAuth } = useAuth();
+  const { signUpWithEmail } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -44,35 +44,7 @@ export default function SignupPage() {
         Sign up with your email — you&apos;ll add your company website right after.
       </p>
 
-      <div className="mt-6 grid grid-cols-2 gap-3">
-        <Button
-          variant="secondary"
-          onClick={async () => {
-            const { error } = await signInWithOAuth("google");
-            if (error) setError(error.message);
-          }}
-        >
-          Google
-        </Button>
-        <Button
-          variant="secondary"
-          onClick={async () => {
-            const { error } = await signInWithOAuth("github");
-            if (error) setError(error.message);
-          }}
-        >
-          GitHub
-        </Button>
-      </div>
-      {error && <p className="mt-3 text-xs leading-relaxed text-critical">{error}</p>}
-
-      <div className="my-6 flex items-center gap-3 text-xs text-faint">
-        <span className="h-px flex-1 bg-border" />
-        or sign up with email
-        <span className="h-px flex-1 bg-border" />
-      </div>
-
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+      <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-3">
         <Input
           placeholder="Full name"
           value={name}
@@ -94,6 +66,7 @@ export default function SignupPage() {
           minLength={8}
           required
         />
+        {error && <p className="text-xs leading-relaxed text-critical">{error}</p>}
         {notice && <p className="text-xs text-accent">{notice}</p>}
         <Button type="submit" disabled={loading}>
           {loading ? "Creating account…" : "Create account"}
