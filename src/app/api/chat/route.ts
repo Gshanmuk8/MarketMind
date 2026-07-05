@@ -3,6 +3,9 @@ import { z } from "zod";
 import { getSessionUser } from "@/lib/session";
 import { askStrategist, listMessages } from "@/features/chat/service";
 
+// Grounded answers can take >10s of model time — never cut them off.
+export const maxDuration = 60;
+
 const askSchema = z.object({ message: z.string().min(2).max(2000) });
 
 /** GET /api/chat — the default thread's messages. */
