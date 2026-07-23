@@ -114,12 +114,13 @@ export async function updateSettings(
 
 /**
  * Send a message through one channel and log the attempt. Never throws —
- * returns whether it was delivered so callers can report partial success.
+ * returns whether it was delivered and, on failure, the reason (surfaced to
+ * the user by "Test" so a misconfiguration is diagnosable, not opaque).
  */
 async function sendToChannel(
   channel: NotificationChannel,
   message: DeliveryMessage
-): Promise<boolean> {
+): Promise<{ ok: boolean; error?: string }> {
   const adapter = getAdapter(channel.type);
 
   // Deliver first, capture the outcome, THEN log — so a transient failure of
@@ -128,7 +129,9 @@ async function sendToChannel(
   let ok = false;
   let error: string | undefined;
   if (!adapter || !adapter.isConfigured()) {
-    error = `No configured adapter for ${channel.type} (missing server credential).`;
+    error = `${channel.type} delivery isn't configured on the server (missing ${
+      channel.type === "EMAIL" ? "RESEND_API_KEY" : "TELEGRAM_BOT_TOKEN"
+    }).`;
   } else {
     try {
       await adapter.send(channel.config, message);
@@ -152,7 +155,7 @@ async function sendToChannel(
     })
     .catch(() => undefined);
 
-  return ok;
+  return { ok, error };
 }
 
 /**
@@ -179,7 +182,7 @@ export async function deliverReport(reportId: string) {
   const message = renderReportMessage(report, report.company);
   let delivered = 0;
   for (const channel of channels) {
-    if (await sendToChannel(channel, message)) delivered += 1;
+    if ((await sendToChannel(channel, message)).ok) delivered += 1;
   }
   return { reportId, delivered, channels: channels.length };
 }
@@ -190,11 +193,11 @@ export async function sendTest(userId: string, channelId: string) {
     where: { id: channelId, userId },
   });
   if (!channel) throw new NotFoundError("Channel not found");
-  const ok = await sendToChannel(channel, {
+  const { ok, error } = await sendToChannel(channel, {
     subject: "MarketMind AI — test alert",
     text: "This is a test from MarketMind AI. Your channel is connected and ready to receive your intelligence memos.",
   });
-  return { ok };
+  return { ok, error };
 }
 
 /* ── scheduled digests + instant alerts (doc 12) ─────────────────────── */
@@ -265,7 +268,7 @@ export async function runDueDigests(at: Date = new Date()) {
       continue;
     }
 
-    if (await sendToChannel(channel, buildDigest(signals))) {
+    if ((await sendToChannel(channel, buildDigest(signals))).ok) {
       sent += 1;
       await db.notificationChannel
         .update({ where: { id: channel.id }, data: { lastDigestAt: at } })
@@ -305,7 +308,7 @@ export async function deliverInstantAlert(signalId: string, at: Date = new Date(
     const quiet = inQuietHours(settings, at);
     if (quiet && !(signal.severity === "CRITICAL" && settings?.criticalOverridesQuiet)) continue;
 
-    if (await sendToChannel(channel, buildInstantAlert(signal))) sent += 1;
+    if ((await sendToChannel(channel, buildInstantAlert(signal))).ok) sent += 1;
   }
 
   return { skipped: false as const, sent };

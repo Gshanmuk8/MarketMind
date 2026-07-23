@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ChannelType, NotificationChannel, NotificationSettings } from "@prisma/client";
 import { Clock, Mail, Send, SlidersHorizontal, Trash2 } from "lucide-react";
@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
+import { Toggle } from "@/components/ui/toggle";
 
 async function jsonFetch<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, { headers: { "Content-Type": "application/json" }, ...init });
@@ -22,6 +22,9 @@ async function jsonFetch<T>(url: string, init?: RequestInit): Promise<T> {
 interface ChannelsResponse {
   channels: NotificationChannel[];
   available: ChannelType[];
+}
+interface SettingsResponse {
+  settings: NotificationSettings;
 }
 
 const CHANNELS_KEY = ["notification-channels"];
@@ -42,25 +45,10 @@ const SEVERITIES = [
   { value: "CRITICAL", label: "Critical only" },
 ] as const;
 
-const COMMON_TZ = [
-  "UTC",
-  "Asia/Kolkata",
-  "America/New_York",
-  "America/Chicago",
-  "America/Denver",
-  "America/Los_Angeles",
-  "America/Sao_Paulo",
-  "Europe/London",
-  "Europe/Paris",
-  "Europe/Berlin",
-  "Asia/Dubai",
-  "Asia/Singapore",
-  "Asia/Tokyo",
-  "Australia/Sydney",
-];
+const FALLBACK_TZ = ["UTC", "Asia/Kolkata", "America/New_York", "Europe/London", "Asia/Singapore"];
 
 const selectClass =
-  "h-9 rounded-md border border-border bg-surface px-2 text-sm text-foreground outline-none focus-visible:border-border-strong";
+  "h-10 rounded-md border border-border bg-surface-overlay px-2.5 text-sm text-foreground shadow-[inset_0_1px_2px_rgb(35_35_31/0.03)] outline-none transition-colors hover:border-border-strong/40 focus:border-accent/50 focus:ring-2 focus:ring-accent/20";
 
 function destinationOf(channel: NotificationChannel): string {
   const config = (channel.config ?? {}) as { email?: string; chatId?: string };
@@ -82,8 +70,8 @@ function scheduleSummary(c: NotificationChannel): string {
 
 /**
  * The delivery desk (doc 12): connect email / Telegram, then control when,
- * how often, and how urgent — per-channel schedule + per-user timezone and
- * quiet hours. Existing add / test / pause / remove behavior is unchanged.
+ * how often, and how urgent. Every control responds instantly (optimistic),
+ * timezone auto-detects, and the full IANA zone list is selectable.
  */
 export function NotificationsPanel() {
   const qc = useQueryClient();
@@ -104,7 +92,7 @@ export function NotificationsPanel() {
     onSuccess: () => {
       setAdding(null);
       setValue("");
-      setNotice("Channel added. Set its schedule below, then send a test.");
+      setNotice("Channel added. Set its schedule, then send a test.");
       invalidate();
     },
     onError: (e) => setNotice((e as Error).message),
@@ -156,9 +144,9 @@ export function NotificationsPanel() {
   const available = channelsQ.data?.available ?? [];
 
   return (
-    <section>
+    <section className="rise">
       <p className="microlabel mb-1">Delivery — memos, digests &amp; alerts</p>
-      <p className="mb-6 max-w-lg text-sm text-muted">
+      <p className="mb-6 max-w-lg text-sm leading-relaxed text-muted">
         Your intelligence, delivered where you already are. Connect a channel, then choose exactly
         when it arrives, how often, and how urgent it has to be.
       </p>
@@ -179,9 +167,12 @@ export function NotificationsPanel() {
         ) : (
           <>
             {channels.length > 0 && (
-              <div className="border-t border-border">
+              <div className="flex flex-col gap-3">
                 {channels.map((channel) => (
-                  <div key={channel.id} className="border-b border-border py-4">
+                  <div
+                    key={channel.id}
+                    className="rounded-xl border border-border bg-surface p-4 shadow-[var(--shadow-card)] transition-all duration-200 hover:shadow-[var(--shadow-lifted)]"
+                  >
                     <div className="flex flex-wrap items-center gap-3">
                       <Badge variant={channel.enabled ? "live" : "default"}>
                         {channel.type.toLowerCase()}
@@ -296,7 +287,7 @@ export function NotificationsPanel() {
   );
 }
 
-/* ── per-channel schedule editor ─────────────────────────────────────── */
+/* ── per-channel schedule editor (local state — instant) ─────────────── */
 
 function ScheduleEditor({
   channel,
@@ -340,7 +331,7 @@ function ScheduleEditor({
             type="time"
             value={deliveryTime}
             onChange={(e) => setDeliveryTime(e.target.value)}
-            className="h-9 max-w-[10rem]"
+            className="max-w-[10rem]"
           />
         </label>
       )}
@@ -365,7 +356,7 @@ function ScheduleEditor({
             max={28}
             value={monthlyDay}
             onChange={(e) => setMonthlyDay(Math.min(28, Math.max(1, Number(e.target.value) || 1)))}
-            className="h-9 max-w-[6rem]"
+            className="max-w-[6rem]"
           />
         </label>
       )}
@@ -383,31 +374,19 @@ function ScheduleEditor({
         </select>
       </label>
 
-      <label className="flex items-center gap-2.5 sm:col-span-2">
-        <input
-          type="checkbox"
-          checked={instantAlerts}
-          onChange={(e) => setInstantAlerts(e.target.checked)}
-          className="size-4 accent-[var(--color-accent,#7a3b1e)]"
-        />
+      <div className="flex items-center gap-3 sm:col-span-2">
+        <Toggle checked={instantAlerts} onChange={setInstantAlerts} label="Instant alerts" />
         <span className="text-sm text-foreground">
           Also alert me instantly on important/critical signals (out of schedule)
         </span>
-      </label>
+      </div>
 
       <div className="flex gap-2 sm:col-span-2">
         <Button
           size="sm"
           loading={saving}
           onClick={() =>
-            onSave({
-              frequency,
-              deliveryTime,
-              weeklyDay,
-              monthlyDay,
-              priorityThreshold,
-              instantAlerts,
-            })
+            onSave({ frequency, deliveryTime, weeklyDay, monthlyDay, priorityThreshold, instantAlerts })
           }
         >
           Save schedule
@@ -420,35 +399,74 @@ function ScheduleEditor({
   );
 }
 
-/* ── per-user delivery preferences ───────────────────────────────────── */
+/* ── per-user delivery preferences (optimistic — instant) ────────────── */
 
 function DeliveryPreferences({ onNotice }: { onNotice: (m: string) => void }) {
   const qc = useQueryClient();
   const { data, isPending } = useQuery({
     queryKey: SETTINGS_KEY,
-    queryFn: () => jsonFetch<{ settings: NotificationSettings }>("/api/notifications/settings"),
+    queryFn: () => jsonFetch<SettingsResponse>("/api/notifications/settings"),
   });
 
   const save = useMutation({
     mutationFn: (body: Record<string, unknown>) =>
       jsonFetch("/api/notifications/settings", { method: "PATCH", body: JSON.stringify(body) }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: SETTINGS_KEY });
-      onNotice("Delivery preferences saved.");
+    // Optimistic: reflect the change instantly so every control feels live.
+    onMutate: async (patch) => {
+      await qc.cancelQueries({ queryKey: SETTINGS_KEY });
+      const prev = qc.getQueryData<SettingsResponse>(SETTINGS_KEY);
+      if (prev) {
+        qc.setQueryData<SettingsResponse>(SETTINGS_KEY, {
+          settings: { ...prev.settings, ...(patch as Partial<NotificationSettings>) },
+        });
+      }
+      return { prev };
     },
-    onError: (e) => onNotice((e as Error).message),
+    onError: (e, _patch, ctx) => {
+      if (ctx?.prev) qc.setQueryData(SETTINGS_KEY, ctx.prev);
+      onNotice((e as Error).message);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: SETTINGS_KEY }),
   });
 
-  if (isPending || !data) return <Skeleton className="h-20" />;
-  const s = data.settings;
+  const browserTz = useMemo(() => {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    } catch {
+      return "UTC";
+    }
+  }, []);
 
-  // Ensure the user's own timezone is selectable even if not in the common list.
-  const zones = COMMON_TZ.includes(s.timezone) ? COMMON_TZ : [s.timezone, ...COMMON_TZ];
+  const allZones = useMemo(() => {
+    try {
+      const z = (Intl as unknown as { supportedValuesOf?: (k: string) => string[] }).supportedValuesOf?.(
+        "timeZone"
+      );
+      if (Array.isArray(z) && z.length) return z;
+    } catch {
+      /* older browser — fall through */
+    }
+    return FALLBACK_TZ;
+  }, []);
+
+  // Adopt the browser's timezone once, if the account is still on the UTC default.
+  const adopted = useRef(false);
+  useEffect(() => {
+    if (!data || adopted.current) return;
+    if (data.settings.timezone === "UTC" && browserTz !== "UTC") {
+      adopted.current = true;
+      save.mutate({ timezone: browserTz });
+    }
+  }, [data, browserTz]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (isPending || !data) return <Skeleton className="h-40" />;
+  const s = data.settings;
+  const zones = allZones.includes(s.timezone) ? allZones : [s.timezone, ...allZones];
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-5 shadow-[var(--shadow-soft)]">
-      <p className="microlabel mb-4">Delivery preferences</p>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <div className="rounded-xl border border-border bg-surface p-6 shadow-[var(--shadow-card)]">
+      <p className="microlabel mb-5">Delivery preferences</p>
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
         <label className="flex flex-col gap-1.5">
           <span className="microlabel">Your timezone</span>
           <select
@@ -457,10 +475,12 @@ function DeliveryPreferences({ onNotice }: { onNotice: (m: string) => void }) {
             onChange={(e) => save.mutate({ timezone: e.target.value })}
           >
             {zones.map((z) => (
-              <option key={z} value={z}>{z}</option>
+              <option key={z} value={z}>{z.replace(/_/g, " ")}</option>
             ))}
           </select>
-          <span className="text-xs text-faint">Delivery times are in this zone.</span>
+          <span className="text-xs text-faint">
+            Delivery times use this zone. Type to search the list.
+          </span>
         </label>
 
         <div className="flex flex-col gap-1.5">
@@ -468,43 +488,39 @@ function DeliveryPreferences({ onNotice }: { onNotice: (m: string) => void }) {
           <div className="flex items-center gap-2">
             <Input
               type="time"
-              defaultValue={s.quietHoursStart ?? ""}
-              onBlur={(e) => save.mutate({ quietHoursStart: e.target.value || null })}
-              className="h-9 max-w-[8rem]"
+              value={s.quietHoursStart ?? ""}
+              onChange={(e) => save.mutate({ quietHoursStart: e.target.value || null })}
+              className="max-w-[8rem]"
               aria-label="Quiet hours start"
             />
             <span className="text-sm text-faint">to</span>
             <Input
               type="time"
-              defaultValue={s.quietHoursEnd ?? ""}
-              onBlur={(e) => save.mutate({ quietHoursEnd: e.target.value || null })}
-              className="h-9 max-w-[8rem]"
+              value={s.quietHoursEnd ?? ""}
+              onChange={(e) => save.mutate({ quietHoursEnd: e.target.value || null })}
+              className="max-w-[8rem]"
               aria-label="Quiet hours end"
             />
           </div>
         </div>
 
-        <label className={cn("flex items-center gap-2.5 sm:col-span-2")}>
-          <input
-            type="checkbox"
-            checked={s.weekendPause}
-            onChange={(e) => save.mutate({ weekendPause: e.target.checked })}
-            className="size-4 accent-[var(--color-accent,#7a3b1e)]"
-          />
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface-raised/40 px-4 py-3 sm:col-span-2">
           <span className="text-sm text-foreground">Pause all delivery on weekends</span>
-        </label>
-
-        <label className="flex items-center gap-2.5 sm:col-span-2">
-          <input
-            type="checkbox"
-            checked={s.criticalOverridesQuiet}
-            onChange={(e) => save.mutate({ criticalOverridesQuiet: e.target.checked })}
-            className="size-4 accent-[var(--color-accent,#7a3b1e)]"
+          <Toggle
+            checked={s.weekendPause}
+            onChange={(v) => save.mutate({ weekendPause: v })}
+            label="Pause on weekends"
           />
-          <span className="text-sm text-foreground">
-            Let critical alerts break through quiet hours
-          </span>
-        </label>
+        </div>
+
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface-raised/40 px-4 py-3 sm:col-span-2">
+          <span className="text-sm text-foreground">Let critical alerts break through quiet hours</span>
+          <Toggle
+            checked={s.criticalOverridesQuiet}
+            onChange={(v) => save.mutate({ criticalOverridesQuiet: v })}
+            label="Critical overrides quiet hours"
+          />
+        </div>
       </div>
     </div>
   );

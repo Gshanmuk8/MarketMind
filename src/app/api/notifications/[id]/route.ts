@@ -35,7 +35,7 @@ export async function PATCH(request: Request, { params }: Params) {
       return NextResponse.json(
         result.ok
           ? { ok: true }
-          : { error: "Test send failed — check the address/chat id and try again." },
+          : { error: result.error ?? "Test send failed — check the address/chat id and try again." },
         { status: result.ok ? 200 : 502 }
       );
     }
