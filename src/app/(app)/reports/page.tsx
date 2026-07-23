@@ -9,7 +9,7 @@ export default function ReportsPage() {
   return (
     <>
       <PageHeader
-        eyebrow="The record"
+        eyebrow="Archive"
         title="Reports"
         description="Executive summaries, threats, opportunities, and prioritized actions — grounded in the period's signals."
       />

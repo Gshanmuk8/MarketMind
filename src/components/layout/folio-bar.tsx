@@ -44,8 +44,15 @@ export function FolioBar() {
             <LogoMark className="size-6" />
             <span className="font-display text-base text-foreground">MarketMind</span>
           </Link>
-          <p className="microlabel hidden lg:block">{section?.title ?? "MarketMind"}</p>
-          {today && <p aria-hidden className="microlabel hidden sm:block">{today}</p>}
+          {section ? (
+            <p className="microlabel hidden lg:block">
+              <span className="text-accent">{section.room}</span>
+              <span className="text-faint"> / {section.title}</span>
+            </p>
+          ) : (
+            <p className="microlabel hidden lg:block">MarketMind</p>
+          )}
+          {today && <p aria-hidden className="microlabel hidden sm:block text-faint">{today}</p>}
         </div>
 
         <div className="flex items-center gap-2">

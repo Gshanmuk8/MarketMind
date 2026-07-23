@@ -15,7 +15,7 @@ function IndexEntry({ item, index }: { item: NavItem; index: number }) {
       href={item.href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "group relative -mx-3 flex items-baseline gap-4 rounded-lg px-3 py-2.5 transition-all duration-300 ease-[var(--ease-out-soft)]",
+        "group relative -mx-3 flex items-start gap-4 rounded-lg px-3 py-2.5 transition-all duration-300 ease-[var(--ease-out-soft)]",
         active
           ? "bg-accent-dim text-foreground shadow-[inset_0_1px_0_rgb(255_255_255/0.5)]"
           : "text-muted hover:translate-x-0.5 hover:bg-surface-raised hover:text-foreground"
@@ -26,20 +26,30 @@ function IndexEntry({ item, index }: { item: NavItem; index: number }) {
         aria-hidden
         className={cn(
           "absolute left-0 top-1/2 w-[2.5px] -translate-y-1/2 rounded-full bg-accent transition-all duration-300 ease-[var(--ease-out-soft)]",
-          active ? "h-5 opacity-100" : "h-0 opacity-0"
+          active ? "h-8 opacity-100" : "h-0 opacity-0"
         )}
         style={active ? { boxShadow: "0 0 10px color-mix(in oklab, var(--color-accent), transparent 40%)" } : undefined}
       />
       <span
         aria-hidden
         className={cn(
-          "font-data text-[11px] tracking-wide transition-colors",
+          "font-data mt-0.5 text-[11px] tracking-wide transition-colors",
           active ? "text-accent" : "text-faint group-hover:text-muted"
         )}
       >
         {String(index).padStart(2, "0")}
       </span>
-      <span className="text-sm">{item.title}</span>
+      <span className="flex min-w-0 flex-col gap-0.5">
+        <span
+          className={cn(
+            "font-data text-[9px] uppercase tracking-[0.18em] transition-colors",
+            active ? "text-accent" : "text-faint group-hover:text-muted"
+          )}
+        >
+          {item.room}
+        </span>
+        <span className="text-sm leading-tight">{item.title}</span>
+      </span>
     </Link>
   );
 }

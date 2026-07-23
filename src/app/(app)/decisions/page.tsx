@@ -13,7 +13,7 @@ export default function DecisionsPage() {
   return (
     <>
       <PageHeader
-        eyebrow="The war room"
+        eyebrow="War Room"
         title="Decisions"
         description="Open questions to settle, and the permanent record of what you decided, why, and how the market proved it out."
       />

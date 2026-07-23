@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { TerminalShell, TerminalHeader, TerminalSignalRow, SEV, SEV_LABEL, stamp } from "@/components/terminal/terminal";
 import { CountUp } from "@/components/ui/count-up";
@@ -91,8 +92,54 @@ export default async function CompetitorProfilePage({
     competitor.pricingSummary && { label: "Pricing", value: competitor.pricingSummary },
   ].filter(Boolean) as { label: string; value: string }[];
 
+  // Gallery framing — the museum plaque around the artifact (the black panel).
+  const sim = competitor.similarityScore != null ? Math.round(competitor.similarityScore * 100) : null;
+  const observedSince = competitor.createdAt
+    ? new Date(competitor.createdAt).toLocaleDateString("en-US", { month: "long", year: "numeric" })
+    : null;
+  const archiveNote =
+    `This entity overlaps your market${sim != null ? ` at ${sim}%` : ""}` +
+    `${threat != null ? ` and currently holds a threat score of ${threat}/100` : ""}. ` +
+    (lead ? `Primary concern: ${lead.title}.` : "Monitored for competitive positioning.");
+
   return (
-    <TerminalShell>
+    <div>
+      {/* Curatorial header — the gallery-wall label that names the artifact and
+          fixes it in space (which room, which entity, where it sits). */}
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
+        <div className="min-w-0">
+          <Link
+            href="/competitors"
+            className="microlabel inline-flex items-center gap-1.5 text-muted transition-colors hover:text-foreground"
+          >
+            ← Market Atlas · all competitors
+          </Link>
+          <p className="microlabel mt-4 text-faint">Entity · {competitor.domain}</p>
+          <h1 className="display-3 mt-1 text-foreground">{competitor.name}</h1>
+        </div>
+        <div className="text-left sm:text-right">
+          <p className="microlabel text-faint">Market overlap</p>
+          {sim != null ? (
+            <div className="mt-2 flex items-center gap-2 sm:justify-end">
+              <span className="flex items-center gap-px" aria-hidden>
+                {Array.from({ length: 10 }).map((_, i) => (
+                  <span
+                    key={i}
+                    className="h-2.5 w-1 rounded-[1px]"
+                    style={{ background: i < Math.round(sim / 10) ? "var(--color-live)" : "var(--color-border)" }}
+                  />
+                ))}
+              </span>
+              <span className="font-data text-sm text-foreground">{sim}%</span>
+            </div>
+          ) : (
+            <p className="mt-2 font-data text-sm text-faint">Not yet scored</p>
+          )}
+          {observedSince && <p className="microlabel mt-3 text-faint">On file since {observedSince}</p>}
+        </div>
+      </div>
+
+      <TerminalShell>
       <TerminalHeader label={`Dossier · ${competitor.domain}`} subtitle={competitor.name} />
 
       {/* Status + description band */}
@@ -389,6 +436,20 @@ export default async function CompetitorProfilePage({
           )}
         </section>
       </div>
-    </TerminalShell>
+      </TerminalShell>
+
+      {/* Archive note — the analyst's placard beneath the artifact. Offset
+          left for controlled asymmetry, the way a museum caption sits. */}
+      <div className="mt-6 max-w-xl">
+        <p className="microlabel text-faint">Archive note</p>
+        <p className="mt-2.5 text-sm leading-relaxed text-muted">{archiveNote}</p>
+        {observedSince && (
+          <p className="microlabel mt-4 text-faint">
+            Observed since {observedSince} · {competitor.status.toLowerCase()}
+          </p>
+        )}
+        <span aria-hidden className="rule-soft mt-5 block w-16" />
+      </div>
+    </div>
   );
 }
