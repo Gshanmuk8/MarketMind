@@ -60,7 +60,7 @@ function CompetitorEntry({ competitor, index }: { competitor: CompetitorRow; ind
         {suggested && (
           <Button
             size="sm"
-            disabled={update.isPending}
+            loading={update.isPending && update.variables?.status === "TRACKING"}
             onClick={() => update.mutate({ id: competitor.id, status: "TRACKING" })}
           >
             Track
@@ -69,7 +69,7 @@ function CompetitorEntry({ competitor, index }: { competitor: CompetitorRow; ind
         <Button
           size="sm"
           variant="ghost"
-          disabled={update.isPending}
+          loading={update.isPending && update.variables?.status === "DISMISSED"}
           onClick={() => update.mutate({ id: competitor.id, status: "DISMISSED" })}
         >
           Dismiss
@@ -142,7 +142,7 @@ export function CompetitorIndex() {
           <Button
             size="sm"
             variant="secondary"
-            disabled={trackAll.isPending}
+            loading={trackAll.isPending}
             onClick={() => trackAll.mutate(suggested.map((c) => c.id))}
           >
             {trackAll.isPending ? "Tracking…" : `Track all ${suggested.length}`}

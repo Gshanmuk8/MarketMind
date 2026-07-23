@@ -106,7 +106,7 @@ export function DecisionWorkspace() {
                 <p className="text-xs text-critical">{(create.error as Error).message}</p>
               )}
               <div className="flex gap-2">
-                <Button type="submit" size="sm" disabled={create.isPending}>
+                <Button type="submit" size="sm" loading={create.isPending}>
                   Open question
                 </Button>
                 <Button type="button" variant="ghost" size="sm" onClick={() => setCreating(false)}>

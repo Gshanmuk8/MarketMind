@@ -57,6 +57,7 @@ export function DecisionCard({ decision }: { decision: Decision }) {
           <Button
             variant="ghost"
             size="sm"
+            loading={remove.isPending}
             onClick={() => remove.mutate(decision.id)}
             aria-label="Delete decision"
           >
@@ -105,7 +106,7 @@ export function DecisionCard({ decision }: { decision: Decision }) {
             <Button
               variant="secondary"
               size="sm"
-              disabled={update.isPending}
+              loading={update.isPending && update.variables?.status === "REVISIT"}
               onClick={() => update.mutate({ id: decision.id, status: "REVISIT" })}
             >
               <RotateCcw className="size-3.5" /> Mark for revisit
@@ -115,7 +116,7 @@ export function DecisionCard({ decision }: { decision: Decision }) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  disabled={update.isPending}
+                  loading={update.isPending && update.variables?.outcome === "VALIDATED"}
                   onClick={() => update.mutate({ id: decision.id, outcome: "VALIDATED" })}
                 >
                   Validated
@@ -123,7 +124,7 @@ export function DecisionCard({ decision }: { decision: Decision }) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  disabled={update.isPending}
+                  loading={update.isPending && update.variables?.outcome === "REGRETTED"}
                   onClick={() => update.mutate({ id: decision.id, outcome: "REGRETTED" })}
                 >
                   Regretted
@@ -138,7 +139,7 @@ export function DecisionCard({ decision }: { decision: Decision }) {
             <Button
               variant="secondary"
               size="sm"
-              disabled={update.isPending}
+              loading={update.isPending && update.variables?.status === "DECIDED"}
               onClick={() => update.mutate({ id: decision.id, status: "DECIDED" })}
             >
               Stand by decision
@@ -146,7 +147,7 @@ export function DecisionCard({ decision }: { decision: Decision }) {
             <Button
               variant="ghost"
               size="sm"
-              disabled={update.isPending}
+              loading={update.isPending && update.variables?.status === "REVERSED"}
               onClick={() => update.mutate({ id: decision.id, status: "REVERSED" })}
             >
               Reverse decision
@@ -177,7 +178,7 @@ export function DecisionCard({ decision }: { decision: Decision }) {
             onChange={(e) => setRationale(e.target.value)}
           />
           <div className="flex gap-2">
-            <Button type="submit" size="sm" disabled={update.isPending}>
+            <Button type="submit" size="sm" loading={update.isPending}>
               Record decision
             </Button>
             <Button type="button" variant="ghost" size="sm" onClick={() => setDeciding(false)}>

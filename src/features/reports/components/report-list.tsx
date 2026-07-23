@@ -71,8 +71,8 @@ export function ReportList() {
         <p className="microlabel">{reports.length} in the record</p>
         <div className="flex items-center gap-3">
           {notice && <p className="text-xs text-muted">{notice}</p>}
-          <Button size="sm" variant="secondary" onClick={() => generate.mutate()} disabled={generate.isPending}>
-            Generate report now
+          <Button size="sm" variant="secondary" onClick={() => generate.mutate()} loading={generate.isPending}>
+            {generate.isPending ? "Queuing…" : "Generate report now"}
           </Button>
         </div>
       </div>

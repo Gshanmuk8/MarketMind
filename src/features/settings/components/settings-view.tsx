@@ -150,7 +150,7 @@ export function SettingsView() {
                       required
                       className="max-w-xs"
                     />
-                    <Button type="submit" size="sm" disabled={changeUrl.isPending}>
+                    <Button type="submit" size="sm" loading={changeUrl.isPending}>
                       {changeUrl.isPending ? "Switching…" : "Switch"}
                     </Button>
                     <Button type="button" variant="ghost" size="sm" onClick={() => setEditingId(null)}>
@@ -172,7 +172,7 @@ export function SettingsView() {
                   <Button
                     variant="secondary"
                     size="sm"
-                    disabled={reanalyze.isPending}
+                    loading={reanalyze.isPending && reanalyze.variables === company.id}
                     onClick={() => reanalyze.mutate(company.id)}
                   >
                     Re-run analysis
@@ -180,7 +180,7 @@ export function SettingsView() {
                   <Button
                     variant="danger"
                     size="sm"
-                    disabled={removeCompany.isPending}
+                    loading={removeCompany.isPending && removeCompany.variables === company.id}
                     onClick={() => {
                       if (confirm(`Delete ${company.name ?? company.domain} and ALL its intelligence — competitors, signals, reports, decisions? This cannot be undone.`)) {
                         removeCompany.mutate(company.id);

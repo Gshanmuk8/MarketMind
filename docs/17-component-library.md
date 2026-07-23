@@ -2,13 +2,14 @@
 
 Check here before building anything — duplicating an existing component violates the development rules.
 
-Design language: **Vellum** (see doc 16) — light museum-editorial, graphite ink on porcelain, botanical/mineral accents, **no gradients, glass, glow, or motion**.
+Design language: **Vellum** (see doc 16) — light museum-editorial, graphite ink on porcelain, botanical/mineral accents, **no gradients, glass, or glow**. Motion is out **except one sanctioned exception: the loading spinner** — the single moving mark, reserved for "working…". It stills itself under `prefers-reduced-motion` (owner decision, 2026-07: every in-flight action must show a loading mark).
 
 ## Primitives (`src/components/ui/`)
 
 | Component | Variants / notes |
 | --- | --- |
-| `Button` | `primary` (ink block, paper-coloured type) · `secondary` (hairline outline) · `ghost` · `danger` (restrained brick outline); sizes sm/md/lg; cva-based; square, no glow/gradient |
+| `Button` | `primary` (ink block, paper-coloured type) · `secondary` (hairline outline) · `ghost` · `danger` (restrained brick outline); sizes sm/md/lg; cva-based; square, no glow/gradient. **`loading` prop** shows a leading `Spinner` and disables the button — pass it for every mutation (target the exact row via `mutation.variables` when one hook drives several buttons) |
+| `Spinner` | the one loading mark (lucide `Loader2`, `animate-spin`); inherits `currentColor`; `motion-reduce:animate-none`. Use inline (buttons, search field, chat "thinking") wherever an action is in flight |
 | `Card` (+ Header/Title/Description) | porcelain plate with a fine hairline; prefer rule-separated sections over boxes where a plate isn't needed |
 | `Badge` | `default` · `accent` · `live` · `score` · `warning` · `critical` · **`inference`** (trust tier 2 — mandatory for AI conclusions); quiet mono microtype, hairline tint (no glow) |
 | `Input` | text/email/password/time/number; porcelain field, hairline, sage focus ring |
@@ -20,7 +21,9 @@ Design language: **Vellum** (see doc 16) — light museum-editorial, graphite in
 
 ## Shared (`src/components/shared/`)
 
-`PageHeader` (microlabel eyebrow + display title + description/actions, closed by a hairline) · `EmptyState` (microlabel, title, guidance, action — composed like an art-book opening plate; every empty screen uses it).
+`PageHeader` (microlabel eyebrow + display title + description/actions, closed by a hairline) · `EmptyState` (microlabel, title, guidance, action — composed like an art-book opening plate; every empty screen uses it) · `PageLoading` (centered `Spinner` + label; rendered by each route's `loading.tsx` so **every** navigation shows a loader while the server component streams).
+
+Loading states are mandatory everywhere: route transitions use a `loading.tsx` → `PageLoading`; data queries use `Skeleton` (or `PageLoading`) while pending; mutations use `Button`'s `loading` prop or an inline `Spinner`.
 
 ## Providers (`src/components/providers.tsx`)
 

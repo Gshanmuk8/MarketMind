@@ -128,7 +128,7 @@ export function NotificationsPanel() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      disabled={test.isPending}
+                      loading={test.isPending && test.variables === channel.id}
                       onClick={() => test.mutate(channel.id)}
                     >
                       <Send className="size-3.5" strokeWidth={1.5} /> Test
@@ -136,7 +136,7 @@ export function NotificationsPanel() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      disabled={toggle.isPending}
+                      loading={toggle.isPending && toggle.variables?.id === channel.id}
                       onClick={() => toggle.mutate({ id: channel.id, enabled: !channel.enabled })}
                     >
                       {channel.enabled ? "Pause" : "Resume"}
@@ -144,7 +144,7 @@ export function NotificationsPanel() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      disabled={remove.isPending}
+                      loading={remove.isPending && remove.variables === channel.id}
                       onClick={() => remove.mutate(channel.id)}
                       aria-label="Remove channel"
                     >
@@ -174,7 +174,7 @@ export function NotificationsPanel() {
                 </p>
               )}
               <div className="flex gap-2">
-                <Button type="submit" size="sm" disabled={add.isPending}>
+                <Button type="submit" size="sm" loading={add.isPending}>
                   {add.isPending ? "Adding…" : "Add channel"}
                 </Button>
                 <Button type="button" variant="ghost" size="sm" onClick={() => setAdding(null)}>

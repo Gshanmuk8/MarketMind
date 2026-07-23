@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowUp, MessageSquare } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Spinner } from "@/components/ui/spinner";
 import { EmptyState } from "@/components/shared/empty-state";
 import { cn } from "@/lib/utils";
 import type { ChatSource } from "../service";
@@ -124,7 +125,9 @@ export function ChatPanel() {
                 </li>
                 <li className="max-w-2xl">
                   <p className="microlabel mb-2">Strategist</p>
-                  <p className="text-sm text-faint">Reading your intelligence…</p>
+                  <p className="flex items-center gap-2 text-sm text-faint">
+                    <Spinner className="size-3.5" label="Thinking" /> Reading your intelligence…
+                  </p>
                 </li>
               </>
             )}
@@ -151,7 +154,11 @@ export function ChatPanel() {
             className="flex size-10 items-center justify-center rounded-sm bg-ink-wash text-background transition-colors hover:bg-foreground disabled:opacity-40"
             aria-label="Send"
           >
-            <ArrowUp className="size-4" strokeWidth={1.5} />
+            {ask.isPending ? (
+              <Spinner className="size-4" label="Sending" />
+            ) : (
+              <ArrowUp className="size-4" strokeWidth={1.5} />
+            )}
           </button>
         </div>
       </form>

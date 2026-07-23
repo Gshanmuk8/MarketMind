@@ -68,7 +68,7 @@ export default function SignupPage() {
         />
         {error && <p className="text-xs leading-relaxed text-critical">{error}</p>}
         {notice && <p className="text-xs text-accent">{notice}</p>}
-        <Button type="submit" disabled={loading}>
+        <Button type="submit" loading={loading}>
           {loading ? "Creating account…" : "Create account"}
         </Button>
       </form>

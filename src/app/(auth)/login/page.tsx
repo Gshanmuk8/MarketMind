@@ -55,7 +55,7 @@ export default function LoginPage() {
           required
         />
         {error && <p className="text-xs leading-relaxed text-critical">{error}</p>}
-        <Button type="submit" disabled={loading}>
+        <Button type="submit" loading={loading}>
           {loading ? "Signing in…" : "Sign in"}
         </Button>
       </form>

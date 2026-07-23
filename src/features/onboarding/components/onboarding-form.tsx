@@ -64,7 +64,7 @@ export function OnboardingForm() {
         <p className="text-sm text-critical">{(mutation.error as Error).message}</p>
       )}
 
-      <Button type="submit" size="lg" disabled={mutation.isPending}>
+      <Button type="submit" size="lg" loading={mutation.isPending}>
         {mutation.isPending ? "Starting analysis…" : "Analyze my market"}
         {!mutation.isPending && <ArrowRight className="size-4" />}
       </Button>

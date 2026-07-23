@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Command } from "cmdk";
+import { Spinner } from "@/components/ui/spinner";
 import { mainNav, secondaryNav } from "@/config/navigation";
 
 interface SearchResults {
@@ -38,7 +39,7 @@ export function CommandPalette() {
     };
   }, []);
 
-  const { data } = useQuery({
+  const { data, isFetching } = useQuery({
     queryKey: ["search", query],
     queryFn: async (): Promise<SearchResults> => {
       const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
@@ -67,13 +68,18 @@ export function CommandPalette() {
           shouldFilter={query.trim().length < 2}
           className="overflow-hidden rounded-lg border border-border-strong bg-surface-overlay shadow-[var(--shadow-soft)]"
         >
-          <Command.Input
-            autoFocus
-            value={query}
-            onValueChange={setQuery}
-            placeholder="Search competitors, signals, decisions, reports…"
-            className="h-12 w-full border-b border-border bg-transparent px-4 text-sm outline-none placeholder:text-faint"
-          />
+          <div className="relative border-b border-border">
+            <Command.Input
+              autoFocus
+              value={query}
+              onValueChange={setQuery}
+              placeholder="Search competitors, signals, decisions, reports…"
+              className="h-12 w-full bg-transparent px-4 pr-11 text-sm outline-none placeholder:text-faint"
+            />
+            {isFetching && (
+              <Spinner className="absolute right-4 top-1/2 size-4 -translate-y-1/2 text-muted" label="Searching" />
+            )}
+          </div>
           <Command.List className="max-h-80 overflow-y-auto p-2">
             <Command.Empty className="px-3 py-6 text-center text-sm text-faint">
               Nothing found.
