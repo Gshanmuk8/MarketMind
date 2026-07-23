@@ -15,19 +15,21 @@ function IndexEntry({ item, index }: { item: NavItem; index: number }) {
       href={item.href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "group relative -mx-3 flex items-baseline gap-4 rounded-lg px-3 py-2 transition-all duration-200 ease-out",
+        "group relative -mx-3 flex items-baseline gap-4 rounded-lg px-3 py-2.5 transition-all duration-300 ease-[var(--ease-out-soft)]",
         active
-          ? "bg-accent-dim text-foreground"
-          : "text-muted hover:bg-surface-raised hover:text-foreground"
+          ? "bg-accent-dim text-foreground shadow-[inset_0_1px_0_rgb(255_255_255/0.5)]"
+          : "text-muted hover:translate-x-0.5 hover:bg-surface-raised hover:text-foreground"
       )}
     >
       {/* Accent rail on the active entry — a quiet Linear-style marker */}
-      {active && (
-        <span
-          aria-hidden
-          className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-full bg-accent"
-        />
-      )}
+      <span
+        aria-hidden
+        className={cn(
+          "absolute left-0 top-1/2 w-[2.5px] -translate-y-1/2 rounded-full bg-accent transition-all duration-300 ease-[var(--ease-out-soft)]",
+          active ? "h-5 opacity-100" : "h-0 opacity-0"
+        )}
+        style={active ? { boxShadow: "0 0 10px color-mix(in oklab, var(--color-accent), transparent 40%)" } : undefined}
+      />
       <span
         aria-hidden
         className={cn(

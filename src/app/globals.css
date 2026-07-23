@@ -16,6 +16,7 @@
   /* ── Canvas: pale limestone page, porcelain panels ───────────────── */
   --color-background: #f3f2ec; /* pale limestone / oat */
   --color-surface: #fbfaf6; /* porcelain panel (lighter than page) */
+  --color-surface-sunk: #edece4; /* recessed well — layered depth beneath the page */
   --color-surface-raised: #ffffff; /* raised / hover */
   --color-surface-overlay: #ffffff; /* modals, menus, inputs */
   --color-ink-wash: #23231f; /* inverted blocks — ink buttons, footers */
@@ -49,11 +50,18 @@
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
 
-  /* Shadow — layered soft depth. Whisper-quiet at rest, richer on lift. */
+  /* Shadow — layered soft depth. Whisper-quiet at rest, richer on lift.
+     Each carries a 1px top light so panels read as physical material catching
+     a raking gallery light, not flat CSS boxes. */
+  --shadow-hairline: inset 0 1px 0 rgb(255 255 255 / 0.65);
   --shadow-soft: 0 1px 2px rgb(35 35 31 / 0.04), 0 12px 32px -16px rgb(35 35 31 / 0.14);
-  --shadow-card: 0 1px 1px rgb(35 35 31 / 0.04), 0 1px 3px rgb(35 35 31 / 0.05);
-  --shadow-lifted: 0 2px 6px rgb(35 35 31 / 0.05), 0 20px 44px -22px rgb(35 35 31 / 0.22);
-  --shadow-float: 0 10px 30px -10px rgb(35 35 31 / 0.16), 0 30px 70px -34px rgb(35 35 31 / 0.3);
+  --shadow-card: 0 1px 1px rgb(35 35 31 / 0.04), 0 1px 3px rgb(35 35 31 / 0.05), inset 0 1px 0 rgb(255 255 255 / 0.6);
+  --shadow-lifted: 0 2px 6px rgb(35 35 31 / 0.05), 0 22px 48px -22px rgb(35 35 31 / 0.24), inset 0 1px 0 rgb(255 255 255 / 0.7);
+  --shadow-float: 0 10px 30px -10px rgb(35 35 31 / 0.16), 0 30px 70px -34px rgb(35 35 31 / 0.3), inset 0 1px 0 rgb(255 255 255 / 0.7);
+
+  /* Motion — one shared easing vocabulary so everything moves as one hand. */
+  --ease-out-soft: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-in-out-soft: cubic-bezier(0.65, 0.05, 0.36, 1);
 }
 
 /* ── Base ──────────────────────────────────────────────────────────── */
@@ -79,6 +87,22 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* Atmospheric grounding — a barely-there shadow pooling at the base of the
+   page, so the canvas feels like a lit room with depth rather than a flat
+   fill. Fixed and behind content; never interactive. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(
+    130% 70% at 50% 118%,
+    color-mix(in oklab, var(--color-ink-wash), transparent 94%),
+    transparent 58%
+  );
+}
+
 h1,
 h2,
 h3,
@@ -86,6 +110,37 @@ h4 {
   font-family: var(--font-display);
   font-weight: 400;
   letter-spacing: 0.005em;
+}
+
+/* ── Display type — cinematic editorial serif, fluid across viewports ────
+   Large serif reads best with tight tracking and tight leading; the eye
+   wants the letters to touch. These are the museum-headline sizes; body and
+   metadata stay open and generous by contrast. */
+.display-1 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2.75rem, 6vw, 4.75rem);
+  line-height: 1.01;
+  letter-spacing: -0.022em;
+}
+.display-2 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.05;
+  letter-spacing: -0.016em;
+}
+.display-3 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(1.5rem, 2.6vw, 2.05rem);
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+}
+
+/* Comfortable reading measure for editorial prose */
+.measure {
+  max-width: 68ch;
 }
 
 /* Numeric data always in mono with tabular figures */
@@ -110,10 +165,63 @@ h4 {
   border-top: 1px solid var(--color-border);
 }
 
+/* Fading hairline — a rule that dissolves into the margins. Editorial, quiet,
+   more considered than an edge-to-edge line. */
+.rule-soft {
+  height: 1px;
+  border: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--color-border) 12%,
+    var(--color-border) 88%,
+    transparent
+  );
+}
+
 /* Editorial ledger figure — a hairline gold underline on numbers of consequence */
 .ledger {
   border-bottom: 1px solid color-mix(in oklab, var(--color-score), transparent 55%);
   padding-bottom: 0.15em;
+}
+
+/* ── Material & depth ────────────────────────────────────────────────────
+   Panels are physical plates: porcelain, a fine edge, and a 1px top light
+   where the gallery lighting catches the bevel. Objects, not boxes. */
+.panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+}
+
+/* Purposeful hover elevation — the object rises a hair toward the light and
+   its shadow deepens. Movement carries meaning (this is liftable), never
+   decoration. Stilled for reduced-motion users below. */
+.hover-lift {
+  transition:
+    transform 0.28s var(--ease-out-soft),
+    box-shadow 0.28s ease-out,
+    border-color 0.28s ease-out;
+  will-change: transform;
+}
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lifted);
+}
+
+/* A hairline that draws itself in from the left — used under section titles
+   and on focus underlines. Feels like ink laid down, not a static border. */
+.draw-in {
+  background-image: linear-gradient(90deg, var(--color-border-strong), var(--color-border-strong));
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 1px;
+  transition: background-size 0.4s var(--ease-out-soft);
+}
+.draw-in:hover,
+.group:hover .draw-in {
+  background-size: 100% 1px;
 }
 
 /*
@@ -130,6 +238,7 @@ h4 {
 .rise-3 { animation-delay: 0.16s; }
 .rise-4 { animation-delay: 0.22s; }
 .rise-5 { animation-delay: 0.28s; }
+.rise-6 { animation-delay: 0.34s; }
 
 @keyframes riseIn {
   from {

@@ -24,9 +24,7 @@ export default function AppError({
     <main className="flex min-h-[70vh] items-center justify-center px-6">
       <div className="w-full max-w-md text-center">
         <p className="microlabel text-critical">Something broke</p>
-        <h1 className="font-display mt-4 text-3xl leading-tight text-foreground">
-          We couldn&apos;t load this view.
-        </h1>
+        <h1 className="display-3 mt-4 text-foreground">We couldn&apos;t load this view.</h1>
         <p className="mt-3 text-sm leading-relaxed text-muted">
           A transient error interrupted this screen. Your data is safe — try again, and if it
           keeps happening, head back to the dashboard.

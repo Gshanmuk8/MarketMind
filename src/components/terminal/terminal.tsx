@@ -51,25 +51,41 @@ export function LiveDot() {
   );
 }
 
-/** The dark panel wrapper — texture, accent bloom, and the fade-up. */
+/** The dark panel wrapper — layered material, dual accent bloom, a top light
+ *  along the bevel, and the fade-up. Built to feel like a machined instrument
+ *  under gallery lighting rather than a dark rectangle. */
 export function TerminalShell({ children }: { children: React.ReactNode }) {
   return (
     <div
-      style={TERMINAL}
-      className="rise relative overflow-hidden rounded-3xl border border-[var(--t-line)] bg-[var(--t-bg)] text-[var(--t-text)] shadow-[0_40px_90px_-50px_rgba(0,0,0,0.7)]"
+      style={{
+        ...TERMINAL,
+        // Deep drop for float + a hairline top light where the edge catches
+        // the light + a faint inner floor shadow for physical depth.
+        boxShadow:
+          "0 44px 100px -50px rgba(0,0,0,0.75), inset 0 1px 0 rgba(255,255,255,0.05), inset 0 -60px 80px -60px rgba(0,0,0,0.6)",
+      }}
+      className="rise relative overflow-hidden rounded-3xl border border-[var(--t-line)] bg-[var(--t-bg)] text-[var(--t-text)]"
     >
+      {/* Fine machined grain */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.035]"
+        className="pointer-events-none absolute inset-0 opacity-[0.03]"
         style={{
           backgroundImage: "radial-gradient(circle at 1px 1px, #fff 1px, transparent 0)",
           backgroundSize: "22px 22px",
         }}
       />
+      {/* Sage bloom, upper-left — the live/positive light source */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-40"
-        style={{ background: "radial-gradient(60% 100% at 15% 0%, rgba(156,187,132,0.10), transparent 70%)" }}
+        className="pointer-events-none absolute inset-x-0 top-0 h-48"
+        style={{ background: "radial-gradient(58% 100% at 14% 0%, rgba(156,187,132,0.12), transparent 72%)" }}
+      />
+      {/* Faint gold counter-bloom, lower-right — depth + warmth balance */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute bottom-0 right-0 h-56 w-2/3"
+        style={{ background: "radial-gradient(70% 100% at 100% 100%, rgba(208,183,104,0.06), transparent 68%)" }}
       />
       <div className="relative">{children}</div>
     </div>

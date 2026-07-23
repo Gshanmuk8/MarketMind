@@ -9,9 +9,7 @@ export default function NotFound() {
     <main className="flex min-h-screen items-center justify-center bg-background px-6">
       <div className="w-full max-w-md text-center">
         <p className="microlabel text-faint">Error · 404</p>
-        <h1 className="font-display mt-4 text-4xl leading-tight text-foreground">
-          This page isn&apos;t on the map.
-        </h1>
+        <h1 className="display-2 mt-4 text-foreground">This page isn&apos;t on the map.</h1>
         <p className="mt-3 text-sm leading-relaxed text-muted">
           The link may be old, or the intelligence you&apos;re after has moved. Let&apos;s get
           you back to the workspace.

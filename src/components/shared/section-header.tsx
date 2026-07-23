@@ -26,11 +26,7 @@ export function SectionHeader({
     <div className={cn("flex items-end justify-between gap-4", className)}>
       <div className="min-w-0">
         {eyebrow && <p className="microlabel text-faint">{eyebrow}</p>}
-        {title && (
-          <Title className="font-display mt-1.5 text-2xl leading-tight text-foreground">
-            {title}
-          </Title>
-        )}
+        {title && <Title className="display-3 mt-1.5 text-foreground">{title}</Title>}
         {description && (
           <p className="mt-1.5 max-w-prose text-sm leading-relaxed text-muted">{description}</p>
         )}

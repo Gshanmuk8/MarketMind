@@ -68,7 +68,7 @@ export default async function LandingPage({
         <div className="grid grid-cols-1 gap-16 py-16 sm:py-24 lg:grid-cols-12 lg:py-32">
           <div className="rise lg:col-span-7">
             <p className="microlabel mb-8">A briefing, not a dashboard</p>
-            <h1 className="text-4xl leading-[1.08] sm:text-6xl lg:text-7xl">
+            <h1 className="display-1">
               Know your market before&nbsp;it&nbsp;moves.
             </h1>
             <p className="mt-8 max-w-md text-lg leading-relaxed text-muted">
@@ -78,10 +78,13 @@ export default async function LandingPage({
             <div className="mt-12 flex flex-wrap items-center gap-6">
               <Link
                 href="/signup"
-                className="inline-flex h-12 items-center gap-3 bg-ink-wash px-7 text-base font-medium text-background transition-colors hover:bg-foreground"
+                className="group inline-flex h-12 items-center gap-3 bg-ink-wash px-7 text-base font-medium text-background shadow-[var(--shadow-card)] transition-all duration-300 ease-[var(--ease-out-soft)] hover:-translate-y-px hover:bg-foreground hover:shadow-[var(--shadow-lifted)]"
               >
                 Analyze my company
-                <ArrowRight className="size-4" strokeWidth={1.5} />
+                <ArrowRight
+                  className="size-4 transition-transform duration-300 ease-[var(--ease-out-soft)] group-hover:translate-x-1"
+                  strokeWidth={1.5}
+                />
               </Link>
               <p className="microlabel">One URL · ~1–3 minutes</p>
             </div>
@@ -113,7 +116,7 @@ export default async function LandingPage({
         <div className="mx-auto grid max-w-6xl grid-cols-1 gap-12 px-6 py-16 sm:py-24 lg:grid-cols-12 lg:px-10">
           <div className="lg:col-span-4">
             <p className="microlabel mb-4">Specimen</p>
-            <h2 className="text-3xl leading-snug">
+            <h2 className="display-2">
               Every signal arrives already&nbsp;thought&nbsp;through.
             </h2>
             <p className="mt-4 text-sm leading-relaxed text-muted">
@@ -123,7 +126,7 @@ export default async function LandingPage({
           </div>
 
           <article className="rise lg:col-span-7 lg:col-start-6">
-            <div className="border border-border bg-surface-overlay p-6 sm:p-8 lg:p-10">
+            <div className="hover-lift border border-border bg-surface-overlay p-6 shadow-[var(--shadow-card)] sm:p-8 lg:p-10">
               <div className="flex flex-wrap items-center gap-3">
                 <p className="microlabel">Signal · Competitor pricing</p>
                 <Badge variant="warning">Important</Badge>
@@ -162,15 +165,18 @@ export default async function LandingPage({
       {/* Close */}
       <section className="border-t border-border">
         <div className="mx-auto flex max-w-6xl flex-col items-start gap-8 px-6 py-16 sm:py-24 lg:px-10">
-          <h2 className="max-w-2xl text-3xl leading-snug sm:text-4xl">
+          <h2 className="display-2 max-w-2xl">
             The first thing you open every morning.
           </h2>
           <Link
             href="/signup"
-            className="inline-flex h-12 items-center gap-3 rounded-md border border-border-strong px-7 text-base font-medium transition-colors hover:bg-surface-raised"
+            className="group inline-flex h-12 items-center gap-3 rounded-md border border-border-strong px-7 text-base font-medium transition-all duration-300 ease-[var(--ease-out-soft)] hover:-translate-y-px hover:bg-surface-raised hover:shadow-[var(--shadow-card)]"
           >
             Begin the briefing
-            <ArrowRight className="size-4" strokeWidth={1.5} />
+            <ArrowRight
+              className="size-4 transition-transform duration-300 ease-[var(--ease-out-soft)] group-hover:translate-x-1"
+              strokeWidth={1.5}
+            />
           </Link>
         </div>
       </section>
