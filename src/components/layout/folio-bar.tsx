@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Search } from "lucide-react";
 import { mainNav, secondaryNav } from "@/config/navigation";
-import { useCurrentUser } from "@/features/auth/hooks/use-auth";
+import { AccountMenu } from "@/features/auth/components/account-menu";
 import { LogoMark } from "@/components/layout/logo";
 import { cn } from "@/lib/utils";
 
@@ -30,16 +30,11 @@ function useToday() {
 /** Thin folio line: current section, date, search, account. */
 export function FolioBar() {
   const pathname = usePathname();
-  const { data: user } = useCurrentUser();
   const today = useToday();
 
   const section = allNav.find(
     (item) => pathname === item.href || pathname.startsWith(`${item.href}/`)
   );
-  const initial =
-    (user?.user_metadata?.full_name as string | undefined)?.[0] ??
-    user?.email?.[0] ??
-    "·";
 
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur-md">
@@ -63,12 +58,7 @@ export function FolioBar() {
             <span className="hidden sm:inline">Search</span>
             <kbd className="hidden font-data text-[10px] text-faint sm:inline">⌘K</kbd>
           </button>
-          <div
-            className="flex size-8 items-center justify-center rounded-full border border-border-strong bg-surface font-display text-sm text-foreground"
-            aria-label="Account"
-          >
-            {initial.toUpperCase()}
-          </div>
+          <AccountMenu />
         </div>
       </div>
 

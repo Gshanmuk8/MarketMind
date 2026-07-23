@@ -21,11 +21,13 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <div className="rise flex min-h-[300px] flex-col items-center justify-center px-4 py-14 text-center sm:min-h-[380px] sm:px-6 sm:py-20">
-      <div
-        aria-hidden
-        className="mb-8 flex size-16 items-center justify-center rounded-full border border-border bg-surface shadow-[var(--shadow-card)]"
-      >
-        <Icon className="size-6 text-accent/70" strokeWidth={1.5} />
+      {/* Radar-ring flourish — echoes the brand mark; the quiet market waiting */}
+      <div aria-hidden className="relative mb-8 flex size-16 items-center justify-center">
+        <span className="absolute size-24 rounded-full border border-border/50" />
+        <span className="absolute size-32 rounded-full border border-border/25" />
+        <span className="relative flex size-16 items-center justify-center rounded-full border border-border bg-surface shadow-[var(--shadow-card)]">
+          <Icon className="size-6 text-accent/70" strokeWidth={1.5} />
+        </span>
       </div>
       <p className="microlabel mb-4">{eyebrow}</p>
       <h3 className="font-display text-2xl text-foreground">{title}</h3>
