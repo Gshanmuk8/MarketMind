@@ -2,7 +2,8 @@ import { inngest, Events } from "@/jobs/client";
 import { db } from "@/lib/db";
 import { analyzeCompany, fetchCompanyPage } from "@/features/company-analysis/service";
 import { discoverCompetitors } from "@/features/competitor-discovery/service";
-import { assessCompetitorThreat } from "@/features/monitoring/service";
+import { assessBaselineThreats } from "@/features/monitoring/service";
+import { generateCompanyInsights } from "@/features/insights/service";
 import { extractDomain } from "@/lib/utils";
 
 /**
@@ -17,8 +18,13 @@ export const analyzeCompanyJob = inngest.createFunction(
     // ANALYZING — mark it FAILED so the UI can offer a retry.
     onFailure: async ({ event }) => {
       const { companyId } = event.data.event.data as { companyId: string };
+      // Never clobber a COMPLETE analysis — a late step (e.g. the chained
+      // sweep kick) failing must not flip a finished company back to FAILED.
       await db.company
-        .update({ where: { id: companyId }, data: { analysisStatus: "FAILED" } })
+        .updateMany({
+          where: { id: companyId, analysisStatus: { not: "COMPLETE" } },
+          data: { analysisStatus: "FAILED" },
+        })
         .catch(() => undefined); // company may have been deleted meanwhile
     },
   },
@@ -55,7 +61,8 @@ export const analyzeCompanyJob = inngest.createFunction(
           targetAudience: analysis.targetAudience,
           keywords: analysis.keywords,
           analysis: analysis as unknown as object,
-          analysisStatus: "COMPLETE",
+          // Still ANALYZING: "complete" with zero competitors would read as
+          // a broken product. COMPLETE lands after the landscape is saved.
         },
       })
     );
@@ -80,26 +87,30 @@ export const analyzeCompanyJob = inngest.createFunction(
     );
 
     // Baseline threat scores for every discovered competitor — "Highest
-    // threat" must never sit empty, and scores inform track/dismiss.
-    const discovered = await step.run("load-discovered", () =>
-      db.competitor.findMany({
-        where: { companyId, status: "SUGGESTED", threatScore: null },
-        select: { id: true },
-      })
+    // threat" must never sit empty, and scores inform track/dismiss. One
+    // batched AI call for the whole set: per-competitor calls burn
+    // free-tier rate limits and stretch onboarding by minutes.
+    await step
+      .run("baseline-threats", () => assessBaselineThreats(companyId))
+      .catch(() => null);
+
+    await step.run("mark-complete", () =>
+      db.company.update({ where: { id: companyId }, data: { analysisStatus: "COMPLETE" } })
     );
-    for (const competitor of discovered) {
-      await step
-        .run(`baseline-threat-${competitor.id}`, () =>
-          assessCompetitorThreat(competitor.id)
-        )
-        .catch(() => null);
-    }
+
+    // Synthesise the strategic assessment (opportunities, gaps, SWOT) from
+    // the fresh dossier. Never fail onboarding if the strategist stumbles —
+    // the competitor discovery is the critical path; insights are additive.
+    await step
+      .run("generate-insights", () => generateCompanyInsights(companyId))
+      .catch(() => null);
 
     // Chain a market sweep immediately so the dashboard has signals within
     // minutes of onboarding — never an empty briefing until the next cron.
+    // Scoped to THIS company: every other company gets the regular cron.
     await step.sendEvent("kick-ecosystem-sweep", {
       name: Events.ecosystemSweepRequested,
-      data: {},
+      data: { companyId },
     });
 
     return { companyId, competitorsFound: competitors.length };

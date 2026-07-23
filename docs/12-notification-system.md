@@ -1,34 +1,41 @@
 # 12 · Notification System
 
-Status: ✅ shipped. Code: `features/notifications/`, jobs `send-digests` + `instant-alerts`.
+Status: 🔨 shipping. **Report delivery ("Monday Morning Memo") is live**; the per-minute digest scheduler and instant alerts remain planned (see Roadmap below). Code: `features/notifications/`.
 
 ## Principles
 
-Users have complete control over **when, how, and what** they receive. The system behaves like a personal intelligence assistant, never a newsletter: grouped digests, no empty sends, no spam.
+Users have complete control over **when, how, and what** they receive. The system behaves like a personal intelligence assistant, never a newsletter: grouped content, no empty sends, no spam.
 
-## Model
+## Model (schema is complete; code fills in progressively)
 
-- **NotificationChannel** (per destination, several per user): type (EMAIL, TELEGRAM shipped; SLACK/DISCORD/WHATSAPP/PUSH reserved), config (`{email}` / `{chatId}`), frequency (DAILY / WEEKDAYS / WEEKLY+day / MONTHLY+day / INSTANT_ONLY), `deliveryTime` "HH:MM" minute precision, minimum priority, topic subscriptions (empty = all), `instantAlerts` flag, `lastDigestAt` watermark.
-- **NotificationSettings** (per user): IANA timezone, quiet hours (may wrap midnight), critical-overrides-quiet opt-in, weekend pause, vacation until, snooze until.
+- **NotificationChannel** (per destination, several per user): type (EMAIL, TELEGRAM shipped; SLACK/DISCORD/WHATSAPP/PUSH reserved), config (`{email}` / `{chatId}`), `enabled`, frequency (DAILY / WEEKDAYS / WEEKLY+day / MONTHLY+day / INSTANT_ONLY), `deliveryTime`, minimum priority, topic subscriptions (empty = all), `instantAlerts`, `lastDigestAt` watermark.
+- **NotificationSettings** (per user): IANA timezone, quiet hours, critical-overrides-quiet, weekend pause, vacation/snooze. (Consumed by the planned scheduler.)
+- **NotificationLog**: every delivery attempt (QUEUED → SENT/FAILED + error).
 
-## Scheduling semantics (`scheduling.ts` — pure, unit-testable)
+## Delivery adapters (`delivery/`)
 
-- Wall-clock time comes from `Intl.DateTimeFormat` in the user's timezone — DST is handled implicitly; **never** do UTC-offset arithmetic.
-- A digest fires when the channel's frequency matches today AND `deliveryTime` equals the current wall-clock minute.
-- Quiet hours apply to **instant alerts** (digests are exempt — the user chose their time explicitly); pauses (vacation/snooze/weekend) apply to everything.
-- CRITICAL may pierce quiet hours only when the user opted in.
+One file per channel type implementing `DeliveryAdapter { type, isConfigured(), send(config, message) }`. Shipped: **email** (Resend REST, `EMAIL_FROM` sender) and **telegram** (Bot API `sendMessage`, HTML). Adding Slack/Discord/WhatsApp is a new adapter + registry line, never a refactor. `send()` throws on failure so callers can log FAILED and (in jobs) retry.
 
-## Delivery pipeline
+## Report delivery — the Monday Morning Memo (shipped)
 
-- `send-digests` cron runs **every minute** (HH:MM precision requires it): find due channels → collect signals since watermark → filter by priority + topics → `buildDigest()` → adapter send → **advance watermark only after successful delivery** (so a failed send retries against the same signal window; the empty case advances immediately so stale items can't flood a later digest) → log.
-- `instant-alerts` on `signal/recorded`: per opted-in channel, apply threshold/topics/quiet rules → send → log.
-- Adapters implement `DeliveryAdapter` (`delivery/`): one file per channel type; adding Slack/Discord/WhatsApp is a new adapter + registry line, never a refactor.
-- Every attempt writes `NotificationLog` (QUEUED → SENT/FAILED + error). Failed sends throw so Inngest retries.
+When `generate-reports` writes a weekly Report, it delivers it to every **enabled** channel of the owning user whose frequency isn't `INSTANT_ONLY`:
 
-## Smart Digest (`digest.ts`)
+- `features/notifications/render.ts` → `renderReportMessage(report, company)` builds subject + plaintext + HTML from the executive summary, top recommended actions, and a deep link to `/reports/[id]` (absolute via `NEXT_PUBLIC_APP_URL`).
+- `service.deliverReport(reportId)` loads the report + owning user's channels, sends through each adapter, and writes a `NotificationLog` per attempt. Per-channel failures are isolated and logged, never fatal to report generation.
+- Delivery runs in its own Inngest step (memoized), so a job retry never re-sends an already-delivered memo.
 
-Groups signals by category (top 5 shown per group, severity-first), marks provenance (`[AI inference]`), surfaces `whyItMatters`, and closes with an **AI Strategic Summary** — 2–4 sentences naming the most important market movement and one concrete action (`task: "strategy"`; stub text on AI failure). Subject line carries signal counts. Empty digests are never sent.
+Intelligence nobody opens is intelligence that doesn't exist — the memo is how the weekly report reaches the founder without them signing in.
+
+## Channel management
+
+`GET/POST /api/notifications` (list / create), `PATCH/DELETE /api/notifications/[id]` (toggle `enabled`, update config, delete). UI lives in Settings: add an email channel (prefilled with the account email) or a Telegram channel (chat-id, with connect instructions), toggle, and remove.
 
 ## Topic taxonomy
 
-Namespaced stable keys in `features/notifications/types.ts` across five groups: competitor.\*, tech.\* (per AI provider), engineering.\*, hiring.\*, customer.\*. Monitors set `Signal.topic`; topic-less signals match via their category's group.
+Namespaced stable keys in `features/notifications/types.ts`: `competitor.*`, `tech.*`, `engineering.*`, `hiring.*`, `customer.*`, `pricing.*`. Monitors set `Signal.topic`; topic-less signals match via their category's group.
+
+## Roadmap (planned, not yet shipped)
+
+- **`send-digests` cron (per-minute)** — timezone/`deliveryTime` scheduling via `Intl.DateTimeFormat` (never UTC-offset arithmetic), quiet hours for instant alerts, watermark advance only after successful delivery, empty digests skipped.
+- **`instant-alerts` on `signal/recorded`** — IMPORTANT/CRITICAL events delivered immediately to opted-in channels, respecting quiet hours (CRITICAL may pierce when opted in).
+- **Smart Digest (`digest.ts`)** — signals grouped by category with provenance marks and an AI strategic summary.

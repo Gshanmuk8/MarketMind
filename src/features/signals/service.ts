@@ -89,3 +89,10 @@ export async function countSignalsLastDay(userId: string): Promise<number> {
     },
   });
 }
+
+/** Signals observed since a given instant — powers "new since your last visit". */
+export async function countSignalsSince(userId: string, since: Date): Promise<number> {
+  return db.signal.count({
+    where: { company: { userId }, detectedAt: { gt: since } },
+  });
+}

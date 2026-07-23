@@ -75,6 +75,12 @@ function CompetitorEntry({ competitor, index }: { competitor: CompetitorRow; ind
           Dismiss
         </Button>
       </div>
+
+      {update.isError && (
+        <p className="text-xs text-critical sm:col-span-12">
+          {(update.error as Error).message}
+        </p>
+      )}
     </li>
   );
 }
@@ -141,6 +147,11 @@ export function CompetitorIndex() {
           >
             {trackAll.isPending ? "Tracking…" : `Track all ${suggested.length}`}
           </Button>
+          {trackAll.isError && (
+            <p className="w-full text-xs text-critical">
+              Some competitors couldn&apos;t be tracked — the list below shows what went through.
+            </p>
+          )}
         </div>
       )}
       <ol className="border-t border-border">

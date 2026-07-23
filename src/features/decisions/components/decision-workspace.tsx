@@ -12,7 +12,7 @@ import { useCompanies, useCreateDecision, useDecisions } from "../hooks/use-deci
 
 /** Decision Workspace + Memory log (docs 14–15): open questions first. */
 export function DecisionWorkspace() {
-  const { data, isLoading } = useDecisions();
+  const { data, isLoading, isError, refetch } = useDecisions();
   const { data: companiesData } = useCompanies();
   const create = useCreateDecision();
 
@@ -26,6 +26,24 @@ export function DecisionWorkspace() {
         <Skeleton className="h-28" />
         <Skeleton className="h-28" />
       </div>
+    );
+  }
+
+  // A failed load must never masquerade as "no decisions" — the founder's
+  // decision memory looking wiped is far worse than an error message.
+  if (isError) {
+    return (
+      <EmptyState
+        icon={Scale}
+        eyebrow="Something went wrong"
+        title="Couldn't load your decisions"
+        description="Your decision memory is safe — this is a loading problem, not data loss."
+        action={
+          <Button variant="secondary" size="sm" onClick={() => refetch()}>
+            Retry
+          </Button>
+        }
+      />
     );
   }
 

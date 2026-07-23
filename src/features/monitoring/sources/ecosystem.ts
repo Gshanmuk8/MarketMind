@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { ai } from "@/lib/ai";
-import { parseAiJson } from "@/lib/ai/json";
+import { aiText, parseAiJson } from "@/lib/ai/json";
 import { enrichSignal } from "@/features/signals/intelligence";
 import { recordSignal } from "@/features/signals/service";
 import type { SignalCategory } from "@prisma/client";
@@ -161,11 +161,12 @@ export async function sweepEcosystemForCompany(companyId: string, items: Ecosyst
   let signalsRecorded = 0;
 
   for (const pick of (picks ?? []).slice(0, 6)) {
-    const item = fresh[pick.index];
-    if (!item || !pick.summary) continue;
+    const item = typeof pick?.index === "number" ? fresh[pick.index] : undefined;
+    const summary = aiText(pick?.summary);
+    if (!item || !summary) continue;
 
     const enrichment = await enrichSignal(
-      { title: item.title, summary: pick.summary, category: item.category },
+      { title: item.title, summary, category: item.category },
       company
     );
 
@@ -175,13 +176,14 @@ export async function sweepEcosystemForCompany(companyId: string, items: Ecosyst
       severity: enrichment.severity,
       topic: item.topic,
       title: item.title,
-      summary: pick.summary,
+      summary,
       whyItMatters: enrichment.whyItMatters,
       recommendation: enrichment.recommendation,
       sourceName: item.source,
       sourceUrl: item.link,
-      // The headline is a published fact; the summary/meaning are enrichment.
-      isInference: false,
+      // The summary is model-written from the headline alone (the article
+      // body is never fetched) — that's an inference, not a verified fact.
+      isInference: true,
       confidence: enrichment.confidence,
     });
     signalsRecorded += 1;

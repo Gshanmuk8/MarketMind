@@ -74,7 +74,7 @@ export default async function LandingPage({
             <div className="mt-12 flex flex-wrap items-center gap-6">
               <Link
                 href="/signup"
-                className="inline-flex h-12 items-center gap-3 rounded-full bg-accent px-7 text-base font-medium text-white transition-colors hover:bg-accent/90"
+                className="inline-flex h-12 items-center gap-3 bg-ink-wash px-7 text-base font-medium text-background transition-colors hover:bg-foreground"
               >
                 Analyze my company
                 <ArrowRight className="size-4" strokeWidth={1.5} />
@@ -119,7 +119,7 @@ export default async function LandingPage({
           </div>
 
           <article className="rise lg:col-span-7 lg:col-start-6">
-            <div className="rounded-lg border border-border bg-surface-overlay p-6 sm:p-8 lg:p-10">
+            <div className="border border-border bg-surface-overlay p-6 sm:p-8 lg:p-10">
               <div className="flex flex-wrap items-center gap-3">
                 <p className="microlabel">Signal · Competitor pricing</p>
                 <Badge variant="critical">Important</Badge>

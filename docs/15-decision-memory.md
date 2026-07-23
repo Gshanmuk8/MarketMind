@@ -29,10 +29,14 @@ CONSIDERING ──decide──> DECIDED ──revisitAt reached / contradicting 
 Outcome (on DECIDED/REVERSED): PENDING → VALIDATED / MIXED / REGRETTED
 ```
 
-## The revisit loop (planned job `decision-revisit`, daily cron)
+## The revisit loop (job `decision-revisit`, daily cron — shipped)
 
-1. Decisions with `revisitAt <= today` and status DECIDED → flag REVISIT + notify ("You planned to re-evaluate this").
-2. (Later) New CRITICAL/IMPORTANT signals semantically contradicting a decision's rationale → surface "the market moved against this decision".
+`jobs/functions/decision-revisit.ts` → `features/decisions/revisit.ts`, daily at 05:00 UTC, per COMPLETE company:
+
+1. **Scheduled revisit** — decisions with `revisitAt <= now` and status DECIDED are flagged REVISIT (idempotent), and a market-wide `STRATEGY` Insight is created ("You planned to re-evaluate this").
+2. **Contradicting evidence** — recent IMPORTANT/CRITICAL signals are checked by the AI (`task: "strategy"`) against each DECIDED decision's rationale. When the market has moved **against** a decision, it is flagged REVISIT and an Insight is created that names the offending signal ("You bet against voice in March; competitor X just shipped it"). The Insight links `competitorId` when the signal names one.
+
+The AI only *recommends* the revisit — it flags status REVISIT and writes an Insight, never reversing or re-deciding. The founder still owns DECIDED/REVERSED/outcome transitions. Each contradiction is recorded once (dedupe by decision + signal in the Insight `data`), so re-runs don't nag.
 
 ## How the AI uses Decision Memory
 

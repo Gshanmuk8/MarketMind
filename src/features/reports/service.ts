@@ -52,7 +52,10 @@ export async function generateReport(companyId: string, type: ReportType = "WEEK
   const res = await ai.complete({
     task: "strategy",
     json: true,
-    maxTokens: 1800,
+    // The full requested shape (summary + 18 bullets + 5 actions + cited ids
+    // for up to 60 signals) overflows a small budget, and truncated JSON is a
+    // provider-level failure — signal-rich companies would never get reports.
+    maxTokens: 4000,
     messages: [
       {
         role: "system",
@@ -91,7 +94,11 @@ export async function generateReport(companyId: string, type: ReportType = "WEEK
       }))
       .filter((a) => a.title)
       .sort((a, b) => a.priority - b.priority),
-    citedSignalIds: aiList(raw.citedSignalIds),
+    // Only ids that exist in this period — hallucinated ids would render
+    // dead citations in the report view.
+    citedSignalIds: aiList(raw.citedSignalIds).filter((id) =>
+      signals.some((s) => s.id === id)
+    ),
   };
 
   return db.report.create({

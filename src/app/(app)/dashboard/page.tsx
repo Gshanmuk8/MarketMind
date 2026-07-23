@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { Activity, Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -9,6 +10,10 @@ import { LiveRefresh } from "@/components/shared/live-refresh";
 import { Badge } from "@/components/ui/badge";
 import { getSessionUser } from "@/lib/session";
 import { getBriefing } from "@/features/dashboard/service";
+import { countSignalsSince } from "@/features/signals/service";
+import { RetryAnalysis } from "@/features/dashboard/components/retry-analysis";
+import { MarkSeen } from "@/features/dashboard/components/mark-seen";
+import { LAST_SEEN_COOKIE } from "@/features/dashboard/constants";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
@@ -37,7 +42,7 @@ export default async function DashboardPage() {
           action={
             <Link
               href="/onboarding"
-              className="inline-flex h-10 items-center rounded-full bg-accent px-5 text-sm font-medium text-white transition-colors hover:bg-accent/90"
+              className="inline-flex h-10 items-center bg-ink-wash px-5 text-sm font-medium text-background transition-colors hover:bg-foreground"
             >
               Start analysis
             </Link>
@@ -50,9 +55,19 @@ export default async function DashboardPage() {
   const { company, signalsLastDay, trackedCount, suggestedCount, topThreat, signals } = briefing;
   const analyzing = company.analysisStatus === "PENDING" || company.analysisStatus === "ANALYZING";
 
+  // "New since your last visit" — measured from the per-device cookie the
+  // MarkSeen updater stamps on each load (null on the very first visit).
+  const lastSeenRaw = (await cookies()).get(LAST_SEEN_COOKIE)?.value;
+  const lastSeen = lastSeenRaw ? new Date(lastSeenRaw) : null;
+  const newSinceLastVisit =
+    lastSeen && !Number.isNaN(lastSeen.getTime())
+      ? await countSignalsSince(user.id, lastSeen)
+      : 0;
+
   return (
     <>
       <LiveRefresh />
+      <MarkSeen />
       <PageHeader
         eyebrow="The briefing"
         title={company.name ?? company.domain}
@@ -77,11 +92,7 @@ export default async function DashboardPage() {
       {company.analysisStatus === "FAILED" && (
         <div className="rise mb-10 border-b border-border pb-8">
           <p className="text-sm text-critical">
-            Analysis could not complete.{" "}
-            <Link href="/onboarding" className="underline">
-              Try again
-            </Link>
-            .
+            Analysis could not complete. <RetryAnalysis companyId={company.id} />
           </p>
         </div>
       )}
@@ -121,8 +132,15 @@ export default async function DashboardPage() {
 
       {/* Latest intelligence */}
       <section aria-label="Latest intelligence" className="rise-2 rise mt-16">
-        <div className="flex items-baseline justify-between">
-          <h2 className="font-sans text-sm font-medium">Latest intelligence</h2>
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <div className="flex items-baseline gap-3">
+            <h2 className="font-sans text-sm font-medium">Latest intelligence</h2>
+            {newSinceLastVisit > 0 && (
+              <Badge variant="live">
+                {newSinceLastVisit} new since your last visit
+              </Badge>
+            )}
+          </div>
           <Badge variant="inference">Inferences labeled</Badge>
         </div>
         {signals.length === 0 ? (

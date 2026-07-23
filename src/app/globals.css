@@ -1,60 +1,56 @@
 @import "tailwindcss";
 
 /* ────────────────────────────────────────────────────────────────────
-   MarketMind AI — "Atelier" Design Tokens
-   Light-only, editorial, engineered. Warm paper, ink typography,
-   hairline rules. Color is information, not decoration.
+   MarketMind AI — "Vellum" Design Tokens
+   A light museum-editorial system: porcelain & limestone, graphite ink,
+   botanical & mineral accents, architectural whitespace. No dark, no
+   gradients, no glass, no glow, no motion. Premium comes from
+   composition, typography, spacing, and colour alone.
+   (Owner pivot, 2026-07-06 — supersedes Atelier and the Opaline experiment.)
    ──────────────────────────────────────────────────────────────────── */
 
 @theme {
-  /* "Warm Editorial" — ivory & bone, charcoal ink, burnt umber signature,
-     olive mist as the quiet secondary. Museum-grade, uncommon, warm. */
-  --color-background: #f7f4ed; /* ivory page */
-  --color-surface: #eee8dd; /* bone panels */
-  --color-surface-raised: #e4e6d8; /* olive-mist wash hover */
-  --color-surface-overlay: #fbf9f4; /* modals, palettes */
-  --color-ink-wash: #232323; /* inverted blocks (buttons, footers) */
+  /* ── Canvas: pale limestone page, porcelain panels ───────────────── */
+  --color-background: #f3f2ec; /* pale limestone / oat */
+  --color-surface: #fbfaf6; /* porcelain panel (lighter than page) */
+  --color-surface-raised: #ffffff; /* raised / hover */
+  --color-surface-overlay: #ffffff; /* modals, menus, inputs */
+  --color-ink-wash: #23231f; /* inverted blocks — ink buttons, footers */
 
-  /* Rules — strong rules draw in charcoal, like a printed grid */
-  --color-border: #ddd5c7;
-  --color-border-strong: #232323;
+  /* ── Rules: fine editorial hairlines ─────────────────────────────── */
+  --color-border: #e4e2d8;
+  --color-border-strong: #23231f; /* strong rules are ink, not grey */
 
-  /* Ink */
-  --color-foreground: #232323; /* charcoal */
-  --color-muted: #5c584f; /* warm graphite */
-  --color-faint: #8f8a7d; /* putty */
+  /* ── Ink: soft graphite, never pure black ────────────────────────── */
+  --color-foreground: #23231f; /* graphite */
+  --color-muted: #6a685f; /* stone */
+  --color-faint: #9b998d; /* silver mist */
 
-  /* Accents — burnt umber signature, rare specialists */
-  --color-accent: #8b5e3c; /* burnt umber — primary, positive */
-  --color-accent-dim: #8b5e3c1f;
-  --color-live: #667052; /* olive mist, deepened text-safe — live data, links */
-  --color-inference: #7d7a72; /* pewter — AI inference (trust tier 2) */
-  --color-score: #9c813f; /* soft gold — scores */
-  --color-warning: #8a6a2b; /* sepia — warnings only */
-  --color-critical: #9b4a3f; /* oxide red — critical only */
+  /* ── Accents — refined botanical & mineral, used as marks not floods */
+  --color-accent: #566b4f; /* deep sage — primary / positive */
+  --color-accent-dim: #566b4f1a;
+  --color-live: #4e6b78; /* mineral blue — live data, links */
+  --color-inference: #6c7079; /* platinum pewter — AI inference */
+  --color-score: #8a7a3e; /* pale antique gold — scores */
+  --color-warning: #8c7a3b; /* muted bronze-gold — warnings only */
+  --color-critical: #a24a45; /* restrained brick — critical only */
 
-  /* Typography — editorial/luxury stack; commercial faces render when installed */
+  /* Typography — editorial serif + humanist sans + mono data */
   --font-display: "Canela", "Editorial New", "Noe Display", var(--font-instrument), Georgia, serif;
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
 
-  /* Radii — soft, architectural */
-  --radius-sm: 0.375rem;
-  --radius-md: 0.75rem;
-  --radius-lg: 1.25rem;
-  --radius-xl: 2rem;
+  /* Radii — crisp, architectural, understated */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
 
   /* Shadow — nearly invisible, overlays only */
-  --shadow-soft: 0 1px 2px rgb(33 31 27 / 0.04), 0 8px 24px -12px rgb(33 31 27 / 0.12);
-
-  /* Motion */
-  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
-
-  /* Keyframes (registered for Tailwind animate-* utilities) */
-  --animate-rise: rise 0.6s var(--ease-out-expo) both;
+  --shadow-soft: 0 1px 2px rgb(35 35 31 / 0.04), 0 12px 32px -16px rgb(35 35 31 / 0.14);
 }
 
-/* Base */
+/* ── Base ──────────────────────────────────────────────────────────── */
 html {
   color-scheme: light;
 }
@@ -83,7 +79,7 @@ h4 {
   font-variant-numeric: tabular-nums;
 }
 
-/* The system's quiet signature: mono uppercase eyebrows */
+/* Mono uppercase eyebrows — the system's quiet signature */
 .microlabel {
   font-family: var(--font-mono);
   font-size: 0.6875rem;
@@ -93,34 +89,36 @@ h4 {
   color: var(--color-faint);
 }
 
-/* Hairline rule — sections separate with lines, not boxes */
+/* Hairline rule — sections separate with lines and whitespace, not boxes */
 .rule {
   border: 0;
   border-top: 1px solid var(--color-border);
 }
 
-/* Soft entrance — content settles onto the page */
-@keyframes rise {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* Editorial ledger figure — a hairline gold underline on numbers of consequence */
+.ledger {
+  border-bottom: 1px solid color-mix(in oklab, var(--color-score), transparent 55%);
+  padding-bottom: 0.15em;
 }
 
-.rise {
-  animation: rise 0.6s var(--ease-out-expo) both;
+/*
+ * No motion is a design decision here (owner direction): premium comes
+ * from composition, not animation. `.rise` and its stagger classes are
+ * kept as harmless no-ops so existing markup renders instantly and
+ * legibly rather than starting hidden.
+ */
+.rise,
+.rise-1,
+.rise-2,
+.rise-3,
+.rise-4,
+.rise-5 {
+  animation: none;
+  opacity: 1;
+  transform: none;
 }
 
-.rise-1 { animation-delay: 60ms; }
-.rise-2 { animation-delay: 120ms; }
-.rise-3 { animation-delay: 180ms; }
-.rise-4 { animation-delay: 240ms; }
-.rise-5 { animation-delay: 300ms; }
-
+/* Honour reduced-motion for any incidental transitions */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -131,13 +129,13 @@ h4 {
   }
 }
 
-/* Scrollbars that match the paper */
+/* Scrollbars tuned to the paper */
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--color-border-strong) transparent;
 }
 
 ::selection {
-  background: #ecdfc3; /* champagne */
+  background: color-mix(in oklab, var(--color-score), transparent 78%);
   color: var(--color-foreground);
 }

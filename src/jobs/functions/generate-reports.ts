@@ -1,6 +1,7 @@
 import { inngest, Events } from "@/jobs/client";
 import { db } from "@/lib/db";
 import { generateReport } from "@/features/reports/service";
+import { deliverReport } from "@/features/notifications/service";
 import type { ReportType } from "@prisma/client";
 
 /**
@@ -24,13 +25,23 @@ export const generateReportsJob = inngest.createFunction(
     );
 
     let generated = 0;
+    let delivered = 0;
     for (const company of companies) {
       const report = await step
         .run(`report-${company.id}`, () => generateReport(company.id, data.type ?? "WEEKLY"))
         .catch(() => null);
-      if (report) generated += 1;
+      if (!report) continue;
+      generated += 1;
+
+      // Deliver the Monday Morning Memo to the user's channels (doc 12).
+      // Own step so a retry never re-sends; best-effort so a delivery
+      // failure never fails report generation.
+      const result = await step
+        .run(`deliver-${report.id}`, () => deliverReport(report.id))
+        .catch(() => null);
+      delivered += result?.delivered ?? 0;
     }
 
-    return { companies: companies.length, generated };
+    return { companies: companies.length, generated, delivered };
   }
 );

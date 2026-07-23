@@ -1,58 +1,67 @@
-# 16 · UI/UX Design System — "Atelier"
+# 16 · UI/UX Design System — "Vellum"
 
-Tokens live in `src/app/globals.css` `@theme`. Components use token classes only — raw hex in a component is a defect.
+> **Active design language (owner pivot, 2026-07-06).** Vellum supersedes both the earlier *Atelier / Warm Editorial* system and the short-lived dark *Opaline* experiment. Tokens live in `src/app/globals.css` `@theme`. Components use token classes only — a raw hex in a component is a defect.
 
 ## Concept
 
-MarketMind AI is set like a **privately printed intelligence briefing**: warm paper, ink typography, hairline rules, museum spacing. The philosophy is Rams/Muji/Swiss-editorial — engineered rather than decorated, quiet rather than loud. Nothing glows, nothing floats on glass, nothing looks like a dashboard template. Intelligence is communicated through restraint.
+MarketMind AI is presented as a **luxury art publication**, not software: museum-quality editorial design crossed with high-end architecture and gallery catalogues. Someone seeing a screenshot with no context should think *"this is a premium design book,"* not *"this is a SaaS app."* Premium comes entirely from **composition, typography, spacing, colour, and craft** — never from effects.
 
-## Theme
+## Non-negotiables (owner direction)
 
-**Light only** (owner decision, 2026-07 — supersedes the former dark-only rule). Paper depth scale — "Warm Editorial": `background` #F7F4ED (ivory) → `surface` #EEE8DD (bone panels) → `surface-raised` (olive-mist wash hover) → `surface-overlay` (warm white, modals). Rules: `border` (light) / `border-strong` (CHARCOAL #232323 — strong rules are ink, not gray). Text selection is champagne. Shadows nearly invisible, overlays only.
+- **Light only.** No dark backgrounds, no black UI.
+- **No motion.** No animations, no transitions-as-decoration, no parallax. Stillness is the aesthetic. (`.rise`/stagger classes are retained as no-ops so legacy markup renders instantly.)
+- **No gradients, glassmorphism, blur, neon, or glow.** No cyber/gaming/flashy anything.
+- **Banned hues:** pink, maroon, orange, light-brown/biscuit, purple, neon, and generic white-and-blue SaaS blue.
 
-## Color is information, not decoration
+## Palette — refined light, custom and exclusive
 
-"Warm Editorial" palette (owner recolor, 2026-07): charcoal ink on ivory/bone with a burnt-umber signature and olive mist as the quiet secondary. Museum-grade and uncommon; supporting hues are rare specialists (soft gold, sepia, oxide red, pewter). Nothing neon, nothing SaaS.
+Sophisticated pale tones only — porcelain, limestone, bone, pearl, champagne, with botanical and mineral accents. Colour is a **mark**, never a flood.
 
 | Token | Hue | Meaning — use for nothing else |
 | --- | --- | --- |
-| `foreground` | charcoal (#232323) | primary text |
-| `accent` | burnt umber | primary actions, positive state |
-| `live` | olive mist (deepened) | live data, links |
-| `inference` | pewter | **AI inference** markers (trust tier 2) |
-| `score` | soft gold | scores (also the ledger rules on key figures) |
-| `warning` | sepia | warnings only |
-| `critical` | oxide red | critical alerts only |
-| `muted` / `faint` | graphite / stone | secondary / tertiary text |
+| `background` | pale limestone / oat (#F3F2EC) | the page |
+| `surface` | porcelain (#FBFAF6) | panels (lighter than the page) |
+| `surface-raised` / `surface-overlay` | white | raised / modals / inputs |
+| `ink-wash` | graphite (#23231F) | inverted blocks — ink buttons, footers |
+| `foreground` | graphite (#23231F) | primary text (never pure black) |
+| `muted` / `faint` | stone / silver mist | secondary / tertiary text |
+| `border` / `border-strong` | limestone hairline / ink | rules |
+| `accent` | deep sage (#566B4F) | primary / positive marks, links-in-ink |
+| `live` | mineral blue (#4E6B78) | live data, links |
+| `inference` | platinum pewter (#6C7079) | **AI inference** markers (trust tier 2) |
+| `score` | pale antique gold (#8A7A3E) | scores, ledger rules on figures |
+| `warning` | muted bronze-gold (#8C7A3B) | warnings only |
+| `critical` | restrained brick (#A24A45) | critical only |
 
-Color appears in hairline accents, small marks, and type — never in floods. Banned: gradients as decoration, glassmorphism, neumorphism, glows.
+## Typography — part of the identity
 
-## Typography — the identity
-
-- **Display: editorial/luxury serif stack** (`font-display`): Canela → Editorial New → Noe Display when installed; **Instrument Serif** (bundled via next/font) is the guaranteed web face — for page titles, numerals of consequence, and the wordmark. Large, unhurried.
+- **Display: editorial serif** (`font-display`, Instrument Serif / Canela-class) — large, confident, magazine hierarchy; titles and figures of consequence.
 - **Body/UI: Inter** (`font-sans`) — quiet, precise.
 - **Data: JetBrains Mono** (`.font-data`, tabular) — every score, count, time, ID.
-- **Microlabels** (`.microlabel`): mono, uppercase, 10–11px, letter-spacing 0.16em, `text-faint` — section eyebrows, index numbers, column headers. The system's quiet signature.
-- Minimal text. Never shout, never look corporate. Generous line-height (1.6 body), oversized whitespace.
+- **Microlabels** (`.microlabel`): mono uppercase, 10–11px, 0.16em tracking, `text-faint` — eyebrows, index numerals, column heads. The quiet signature.
+- Confident whitespace, generous line-height (1.6 body), strong vertical rhythm.
 
-## Layout — editorial architecture
+## Layout — architectural, not mechanical
 
-Not a SaaS shell. The app reads as a **bound index**: a fixed left *contents column* (wordmark set in the display face, numbered nav entries `01 — Dashboard`, hairline rules) and a thin top *folio line* (current section, date, search, account). Content sits on the ivory page at `max-w-6xl` with asymmetric editorial grids — a wide primary column and a narrow annotation column where the content calls for it. Sections separate with hairlines and whitespace, not boxes. Corners `radius-sm/md` (subtle, consistent).
+Large whitespace, precise alignment, asymmetric editorial grids (wide primary column + narrow annotation column). Sections are **curated, rule-separated by hairlines and space** — not stacked boxes. Left **IndexNav** contents column (numbered) + thin **FolioBar** folio line. `max-w-6xl` measure, museum margins. Grids read like an architecture portfolio.
 
-## Motion
+## Components — custom, crafted
 
-Physical and disappearing: soft fade-rise on mount (`.rise` with stagger), gentle transform on hover (no scale-pops), 200–400ms ease-out-expo. Framer Motion for stateful transitions only. Every animation respects `prefers-reduced-motion` (custom keyframes globally disabled under it in `globals.css`).
+- **Button:** primary = an ink block with paper-coloured type (luxury-print signature); secondary = hairline outline; ghost; danger = restrained brick outline. Square, no radius theatrics, no glow.
+- **Card:** porcelain plate closed by a fine hairline; prefer rule-separated sections over boxes where possible.
+- **Charts / metrics = information design,** not analytics chrome: ranked hairline bars, ledger figures, definition rows — not neon dashboards.
+- **Badge / Input:** quiet mono tint / porcelain field with a sage focus ring.
 
 ## Trust-tier rendering (product rule, non-negotiable)
 
-- Verified fact: plain ink text + source link.
-- AI inference: `inference` Badge variant (silver mist) + confidence where available.
-- Recommendation: explicitly labeled ("Recommended action", "AI Strategic Summary").
+- Verified fact: plain graphite text + source link.
+- AI inference: `inference` Badge variant (platinum) + confidence where available.
+- Recommendation: explicitly labelled ("Recommended action", "AI assessment").
 
 ## Mandatory states
 
-Every list/detail screen implements: **loading** (Skeleton, shaped like the content), **empty** (EmptyState: microlabel, title, guidance, action — set like a colophon page, never a blank div), **error** (message + retry).
+Every list/detail screen implements **loading** (still limestone Skeleton, no pulse), **empty** (EmptyState — composed like a colophon plate), **error** (message + retry). Each is a considered composition, never a blank div.
 
 ## Accessibility & input
 
-Keyboard-first: ⌘K palette, `focus-visible` rings (`ring-accent/40`), semantic HTML, labels on all inputs, WCAG-conscious contrast (ink ≥ 7:1, muted ≥ 4.5:1 on ivory). Decorative rules and numerals are `aria-hidden`.
+Keyboard-first: ⌘K palette, `focus-visible` rings (`ring-accent/40`), semantic HTML, labels on all inputs, WCAG-conscious contrast (graphite ≥ 7:1, muted ≥ 4.5:1 on limestone). Decorative rules and numerals are `aria-hidden`. `prefers-reduced-motion` is honoured (there is essentially no motion to reduce).

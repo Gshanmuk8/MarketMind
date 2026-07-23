@@ -80,7 +80,20 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     await db.company.update({ where: { id }, data: { analysisStatus: "PENDING" } });
   }
 
-  await inngest.send({ name: Events.companyAnalyzeRequested, data: { companyId: id } });
+  try {
+    await inngest.send({ name: Events.companyAnalyzeRequested, data: { companyId: id } });
+  } catch (error) {
+    // The data reset above already happened — never leave the company stuck
+    // on the endless "analyzing" screen when no job is actually queued.
+    console.error("[companies] failed to queue re-analysis:", error);
+    await db.company
+      .update({ where: { id }, data: { analysisStatus: "FAILED" } })
+      .catch(() => undefined);
+    return NextResponse.json(
+      { error: "Analysis couldn't be queued. Please try again." },
+      { status: 503 }
+    );
+  }
   return NextResponse.json({ queued: true }, { status: 202 });
 }
 

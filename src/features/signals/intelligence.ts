@@ -1,5 +1,5 @@
 import { ai } from "@/lib/ai";
-import { parseAiJson } from "@/lib/ai/json";
+import { aiText, parseAiJson } from "@/lib/ai/json";
 import type { SignalSeverity } from "@prisma/client";
 
 /**
@@ -72,8 +72,13 @@ export async function enrichSignal(
     severity: severities.includes(parsed.severity as SignalSeverity)
       ? (parsed.severity as SignalSeverity)
       : "INFO",
-    whyItMatters: parsed.whyItMatters ?? "",
-    recommendation: parsed.recommendation ?? "",
-    confidence: Math.min(1, Math.max(0, parsed.confidence ?? 0.5)),
+    // aiText: a model returning an object/array here must degrade to "",
+    // not crash the Prisma write after the watermark already advanced.
+    whyItMatters: aiText(parsed.whyItMatters),
+    recommendation: aiText(parsed.recommendation),
+    confidence: Math.min(
+      1,
+      Math.max(0, typeof parsed.confidence === "number" ? parsed.confidence : 0.5)
+    ),
   };
 }

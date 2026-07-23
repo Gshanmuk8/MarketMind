@@ -105,6 +105,7 @@ export function DecisionCard({ decision }: { decision: Decision }) {
             <Button
               variant="secondary"
               size="sm"
+              disabled={update.isPending}
               onClick={() => update.mutate({ id: decision.id, status: "REVISIT" })}
             >
               <RotateCcw className="size-3.5" /> Mark for revisit
@@ -114,6 +115,7 @@ export function DecisionCard({ decision }: { decision: Decision }) {
                 <Button
                   variant="ghost"
                   size="sm"
+                  disabled={update.isPending}
                   onClick={() => update.mutate({ id: decision.id, outcome: "VALIDATED" })}
                 >
                   Validated
@@ -121,6 +123,7 @@ export function DecisionCard({ decision }: { decision: Decision }) {
                 <Button
                   variant="ghost"
                   size="sm"
+                  disabled={update.isPending}
                   onClick={() => update.mutate({ id: decision.id, outcome: "REGRETTED" })}
                 >
                   Regretted
@@ -130,15 +133,34 @@ export function DecisionCard({ decision }: { decision: Decision }) {
           </>
         )}
         {decision.status === "REVISIT" && (
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => update.mutate({ id: decision.id, status: "REVERSED" })}
-          >
-            Reverse decision
-          </Button>
+          <>
+            {/* A revisit can end either way — re-confirming must not be a dead end. */}
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={update.isPending}
+              onClick={() => update.mutate({ id: decision.id, status: "DECIDED" })}
+            >
+              Stand by decision
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={update.isPending}
+              onClick={() => update.mutate({ id: decision.id, status: "REVERSED" })}
+            >
+              Reverse decision
+            </Button>
+          </>
         )}
       </div>
+
+      {/* A silently failed transition reads as recorded — always surface it. */}
+      {(update.isError || remove.isError) && (
+        <p className="mt-2 text-xs text-critical">
+          {((update.error ?? remove.error) as Error)?.message ?? "That didn't save — try again."}
+        </p>
+      )}
 
       {deciding && (
         <form onSubmit={submitDecision} className="mt-3 flex flex-col gap-2">

@@ -2,23 +2,25 @@
 
 Check here before building anything — duplicating an existing component violates the development rules.
 
+Design language: **Vellum** (see doc 16) — light museum-editorial, graphite ink on porcelain, botanical/mineral accents, **no gradients, glass, glow, or motion**.
+
 ## Primitives (`src/components/ui/`)
 
 | Component | Variants / notes |
 | --- | --- |
-| `Button` | `primary` (ink fill, ivory text) · `secondary` (hairline outline) · `ghost` · `danger` (clay); sizes sm/md/lg; cva-based; subtle `radius-sm` corners, no glows |
-| `Card` (+ Header/Title/Description) | porcelain panel with hairline border; `plain` styling via className when a section should be rule-separated instead of boxed |
-| `Badge` | `default` · `accent` · `live` · `score` · `warning` · `critical` · **`inference`** (trust tier 2 — mandatory for AI conclusions); mono uppercase microtype |
-| `Input` | text/email/password/time/number; underline-on-ivory or boxed-on-porcelain; accent focus ring |
-| `Skeleton` | linen pulse placeholder for loading states |
+| `Button` | `primary` (ink block, paper-coloured type) · `secondary` (hairline outline) · `ghost` · `danger` (restrained brick outline); sizes sm/md/lg; cva-based; square, no glow/gradient |
+| `Card` (+ Header/Title/Description) | porcelain plate with a fine hairline; prefer rule-separated sections over boxes where a plate isn't needed |
+| `Badge` | `default` · `accent` · `live` · `score` · `warning` · `critical` · **`inference`** (trust tier 2 — mandatory for AI conclusions); quiet mono microtype, hairline tint (no glow) |
+| `Input` | text/email/password/time/number; porcelain field, hairline, sage focus ring |
+| `Skeleton` | still limestone block — no pulse, no shimmer (motion is out) |
 
 ## Layout (`src/components/layout/`)
 
-`IndexNav` (fixed left contents column — Fraunces wordmark, numbered nav entries from `config/navigation.ts`; add nav items THERE, not in the component) · `FolioBar` (thin top line: current section, date, ⌘K search affordance, notifications, account from Supabase user).
+`IndexNav` (fixed left contents column — display wordmark, numbered nav entries from `config/navigation.ts`; add nav items THERE, not in the component) · `FolioBar` (thin top folio line: current section, date, ⌘K search affordance, account from Supabase user).
 
 ## Shared (`src/components/shared/`)
 
-`PageHeader` (microlabel eyebrow + Fraunces title + description/actions, closed by a hairline rule — every app page starts with it) · `EmptyState` (microlabel, title, guidance, action — set like a colophon page; every empty screen uses it).
+`PageHeader` (microlabel eyebrow + display title + description/actions, closed by a hairline) · `EmptyState` (microlabel, title, guidance, action — composed like an art-book opening plate; every empty screen uses it).
 
 ## Providers (`src/components/providers.tsx`)
 

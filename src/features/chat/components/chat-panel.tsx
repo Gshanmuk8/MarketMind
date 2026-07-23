@@ -40,6 +40,8 @@ export function ChatPanel() {
   const ask = useMutation({
     mutationFn: (message: string) =>
       jsonFetch("/api/chat", { method: "POST", body: JSON.stringify({ message }) }),
+    // A failed question must not vanish — put it back in the input to retry.
+    onError: (_error, question) => setInput((current) => current || question),
     onSettled: () => qc.invalidateQueries({ queryKey: ["chat"] }),
   });
 
@@ -70,7 +72,7 @@ export function ChatPanel() {
   return (
     <div className="rise flex min-h-[60vh] flex-col">
       <div className="flex-1">
-        {messages.length === 0 && !ask.isPending ? (
+        {messages.length === 0 && !ask.isPending && !ask.isError ? (
           <EmptyState
             icon={MessageSquare}
             eyebrow="The counsel is in"
@@ -111,10 +113,20 @@ export function ChatPanel() {
               </li>
             ))}
             {ask.isPending && (
-              <li className="max-w-2xl">
-                <p className="microlabel mb-2">Strategist</p>
-                <p className="text-sm text-faint">Reading your intelligence…</p>
-              </li>
+              <>
+                {/* Echo the in-flight question — a 30s wait with the asked
+                    question visible nowhere reads as a swallowed message. */}
+                <li className="ml-auto max-w-2xl">
+                  <p className="microlabel mb-2">You</p>
+                  <div className="whitespace-pre-wrap rounded-lg border border-border bg-surface px-4 py-3 text-sm leading-relaxed">
+                    {ask.variables}
+                  </div>
+                </li>
+                <li className="max-w-2xl">
+                  <p className="microlabel mb-2">Strategist</p>
+                  <p className="text-sm text-faint">Reading your intelligence…</p>
+                </li>
+              </>
             )}
             {ask.isError && (
               <li className="max-w-2xl text-sm text-critical">{(ask.error as Error).message}</li>
@@ -136,7 +148,7 @@ export function ChatPanel() {
           <button
             type="submit"
             disabled={ask.isPending || input.trim().length < 2}
-            className="flex size-10 items-center justify-center rounded-full bg-accent text-white transition-colors hover:bg-accent/90 disabled:opacity-40"
+            className="flex size-10 items-center justify-center rounded-sm bg-ink-wash text-background transition-colors hover:bg-foreground disabled:opacity-40"
             aria-label="Send"
           >
             <ArrowUp className="size-4" strokeWidth={1.5} />

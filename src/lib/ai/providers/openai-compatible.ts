@@ -1,3 +1,4 @@
+import { AiHttpError, parseRetryAfterMs } from "@/lib/ai/errors";
 import type {
   AiProvider,
   AiProviderId,
@@ -32,16 +33,31 @@ export class OpenAiCompatibleProvider implements AiProvider {
   }
 
   private body(req: CompletionRequest, model: string, stream: boolean) {
+    // OpenAI's reasoning family (gpt-5*, o*) rejects `max_tokens` and any
+    // non-default temperature — adapt here so the routing table stays
+    // declarative and a future OPENAI_API_KEY doesn't 400 on every call.
+    const reasoningFamily = this.id === "openai" && /^(gpt-5|o\d)/.test(model);
+    // Never let a gateway default to the model's maximum — that inflates
+    // cost estimates and 402s low-credit accounts. Callers raise as needed.
+    const maxTokens = req.maxTokens ?? 4096;
     return JSON.stringify({
       model,
       messages: req.messages,
-      temperature: req.temperature ?? 0.3,
-      // Never let a gateway default to the model's maximum — that inflates
-      // cost estimates and 402s low-credit accounts. Callers raise as needed.
-      max_tokens: req.maxTokens ?? 4096,
+      ...(reasoningFamily
+        ? { max_completion_tokens: maxTokens }
+        : { temperature: req.temperature ?? 0.3, max_tokens: maxTokens }),
       ...(req.json ? { response_format: { type: "json_object" } } : {}),
       stream,
     });
+  }
+
+  private async throwHttpError(res: Response): Promise<never> {
+    const detail = await res.text().catch(() => "");
+    throw new AiHttpError(
+      `[ai:${this.id}] ${res.status} ${res.statusText} — ${detail.slice(0, 500)}`,
+      res.status,
+      res.status === 429 ? parseRetryAfterMs(res, detail) : undefined
+    );
   }
 
   async complete(req: CompletionRequest, model: string): Promise<CompletionResponse> {
@@ -53,14 +69,25 @@ export class OpenAiCompatibleProvider implements AiProvider {
       body: this.body(req, model, false),
     });
 
-    if (!res.ok) {
-      const detail = await res.text().catch(() => "");
-      throw new Error(`[ai:${this.id}] ${res.status} ${res.statusText} — ${detail.slice(0, 500)}`);
-    }
+    if (!res.ok) await this.throwHttpError(res);
 
     const data = await res.json();
+    const choice = data.choices?.[0];
+    const text: string = choice?.message?.content ?? "";
+
+    // A 200 with nothing in it, or JSON cut off mid-object, must fail HERE
+    // so the chain falls through — never surface as a parse error downstream.
+    if (!text.trim()) {
+      throw new Error(`[ai:${this.id}] ${model} returned an empty completion`);
+    }
+    if (req.json && choice?.finish_reason === "length") {
+      throw new Error(
+        `[ai:${this.id}] ${model} truncated JSON output (finish_reason=length) — raise maxTokens`
+      );
+    }
+
     return {
-      text: data.choices?.[0]?.message?.content ?? "",
+      text,
       provider: this.id,
       model: data.model ?? model,
       usage: {
@@ -79,12 +106,9 @@ export class OpenAiCompatibleProvider implements AiProvider {
       body: this.body(req, model, true),
     });
 
-    if (!res.ok || !res.body) {
-      const detail = await res.text().catch(() => "");
-      throw new Error(`[ai:${this.id}] ${res.status} ${res.statusText} — ${detail.slice(0, 500)}`);
-    }
+    if (!res.ok || !res.body) await this.throwHttpError(res);
 
-    const reader = res.body.getReader();
+    const reader = res.body!.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
 

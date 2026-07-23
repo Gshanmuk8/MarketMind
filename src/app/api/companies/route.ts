@@ -33,6 +33,21 @@ export async function POST(request: Request) {
     );
   }
 
+  // One company per user: the whole product (dashboard, reports, chat
+  // grounding) reads "the" company — a second one would be invisible and
+  // silently split the user's intelligence. Point the existing company at a
+  // new site via Settings instead.
+  const existing = await db.company.findFirst({
+    where: { userId: user.id },
+    select: { domain: true },
+  });
+  if (existing && existing.domain !== domain) {
+    return NextResponse.json(
+      { error: `You're already tracking ${existing.domain}. Change your website in Settings.` },
+      { status: 409 }
+    );
+  }
+
   let company;
   try {
     company = await db.company.create({

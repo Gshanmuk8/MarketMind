@@ -14,17 +14,25 @@ export interface ChatSource {
   label: string;
 }
 
-/** One default thread per user keeps the MVP simple; threads can multiply later. */
+/**
+ * One default thread per user keeps the MVP simple; threads can multiply
+ * later. Oldest-first selection is deterministic: even if a race ever
+ * creates a duplicate thread, the same one wins forever after (latest-
+ * updated selection made history appear to split between threads).
+ */
+async function findDefaultThread(userId: string) {
+  return db.chatThread.findFirst({ where: { userId }, orderBy: { createdAt: "asc" } });
+}
+
 async function getDefaultThread(userId: string) {
-  const existing = await db.chatThread.findFirst({
-    where: { userId },
-    orderBy: { updatedAt: "desc" },
-  });
+  const existing = await findDefaultThread(userId);
   return existing ?? db.chatThread.create({ data: { userId, title: "Strategy" } });
 }
 
 export async function listMessages(userId: string) {
-  const thread = await getDefaultThread(userId);
+  // Read-only: a GET must not create rows — the thread is minted on first ask.
+  const thread = await findDefaultThread(userId);
+  if (!thread) return { threadId: null, messages: [] };
   // Newest 50, presented oldest-first — old threads must not freeze the UI.
   const messages = await db.chatMessage.findMany({
     where: { threadId: thread.id },
@@ -39,6 +47,9 @@ export async function askStrategist(userId: string, question: string) {
 
   const company = await db.company.findFirst({
     where: { userId },
+    // Same selection rule as the dashboard — the strategist must describe
+    // the company the rest of the product shows.
+    orderBy: { createdAt: "asc" },
     select: { id: true, name: true, industry: true, description: true, keywords: true },
   });
   const [signals, competitors, decisions, history] = await Promise.all([
@@ -66,7 +77,7 @@ export async function askStrategist(userId: string, question: string) {
     }),
   ]);
 
-  await db.chatMessage.create({
+  const userMessage = await db.chatMessage.create({
     data: { threadId: thread.id, role: "USER", content: question },
   });
 
@@ -76,10 +87,12 @@ export async function askStrategist(userId: string, question: string) {
     `RECENT SIGNALS:\n${signals.map((s) => `[S:${s.id}] (${s.category}/${s.severity}${s.competitor ? `, ${s.competitor.name}` : ""}) ${s.title} — ${s.whyItMatters ?? ""}`).join("\n") || "(none yet)"}\n\n` +
     `PAST DECISIONS:\n${decisions.map((d) => `- [${d.status}] ${d.title}${d.choice ? ` → ${d.choice}` : ""}${d.rationale ? ` (why: ${d.rationale})` : ""}`).join("\n") || "(none yet)"}`;
 
-  const res = await ai.complete({
-    task: "chat",
-    temperature: 0.4,
-    maxTokens: 900,
+  let res;
+  try {
+    res = await ai.complete({
+      task: "chat",
+      temperature: 0.4,
+      maxTokens: 900,
     messages: [
       {
         role: "system",
@@ -98,7 +111,13 @@ export async function askStrategist(userId: string, question: string) {
       })),
       { role: "user", content: question },
     ],
-  });
+    });
+  } catch (error) {
+    // Unanswered questions must not pile up in history (and get replayed as
+    // grounding on the next successful ask) — retract on failure.
+    await db.chatMessage.delete({ where: { id: userMessage.id } }).catch(() => undefined);
+    throw error;
+  }
 
   // Resolve inline citations into structured sources for the UI.
   const signalIds = [...new Set([...res.text.matchAll(/\[S:([a-z0-9]+)\]/gi)].map((m) => m[1]))];

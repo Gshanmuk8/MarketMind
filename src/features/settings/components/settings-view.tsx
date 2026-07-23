@@ -72,6 +72,9 @@ export function SettingsView() {
 
   async function handleSignOut() {
     await signOut();
+    // The QueryClient outlives the session — cached companies/decisions/
+    // competitors would flash for the next account on this machine.
+    qc.clear();
     router.push("/login");
     router.refresh();
   }

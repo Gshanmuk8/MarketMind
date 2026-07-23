@@ -12,15 +12,21 @@ import {
  * Intelligence pages and every user's digests.
  */
 export const ecosystemSweepJob = inngest.createFunction(
-  { id: "ecosystem-sweep", retries: 1 },
+  // Serialized: the sourceUrl dedup inside sweepEcosystemForCompany is
+  // check-then-insert — two concurrent runs (cron + onboarding chain)
+  // would both pass the check and double-record the same headline.
+  { id: "ecosystem-sweep", retries: 1, concurrency: { limit: 1 } },
   [{ cron: "15 */6 * * *" }, { event: Events.ecosystemSweepRequested }],
-  async ({ step }) => {
+  async ({ event, step }) => {
+    // Onboarding chains a sweep for ONE company; only the cron does everyone.
+    const companyId = (event?.data as { companyId?: string } | undefined)?.companyId;
+
     const items = await step.run("collect-feeds", () => collectEcosystemItems());
     if (items.length === 0) return { items: 0, companies: 0, signalsRecorded: 0 };
 
     const companies = await step.run("load-companies", () =>
       db.company.findMany({
-        where: { analysisStatus: "COMPLETE" },
+        where: { analysisStatus: "COMPLETE", ...(companyId ? { id: companyId } : {}) },
         select: { id: true },
       })
     );

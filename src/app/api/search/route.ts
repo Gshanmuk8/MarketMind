@@ -12,7 +12,9 @@ export async function GET(request: Request) {
     return NextResponse.json({ competitors: [], signals: [], decisions: [], reports: [] });
   }
 
-  const contains = { contains: q, mode: "insensitive" as const };
+  // Escape LIKE wildcards — "100%" must match literally, not as a pattern.
+  const literal = q.replace(/[\\%_]/g, "\\$&");
+  const contains = { contains: literal, mode: "insensitive" as const };
   const [competitors, signals, decisions, reports] = await Promise.all([
     db.competitor.findMany({
       where: { company: { userId: user.id }, status: { not: "DISMISSED" }, name: contains },

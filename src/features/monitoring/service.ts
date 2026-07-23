@@ -122,20 +122,25 @@ export async function monitorCompetitor(competitorId: string) {
   const previous = profile.monitor;
 
   let signalsRecorded = 0;
+  const changed = Boolean(previous && previous.hash !== hash);
 
-  // Advance the watermark BEFORE recording: a mid-loop failure must lose a
-  // few events (next sweep catches up) rather than duplicate them on retry.
-  await db.competitor.update({
-    where: { id: competitor.id },
-    data: {
-      profile: { ...profile, monitor: { hash, excerpt, checkedAt: new Date().toISOString() } },
-    },
-  });
-
-  if (previous && previous.hash !== hash) {
+  if (previous && changed) {
     const events = await extractChanges(competitor.name, previous.excerpt, excerpt);
 
     for (const event of events) {
+      // Retry-safe: the watermark only advances after the batch lands, so a
+      // mid-loop failure replays the step — skip events already recorded.
+      const duplicate = await db.signal.findFirst({
+        where: {
+          companyId: competitor.company.id,
+          competitorId: competitor.id,
+          title: event.title,
+          detectedAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+        },
+        select: { id: true },
+      });
+      if (duplicate) continue;
+
       // The Intelligence Layer is mandatory — no raw event is ever stored.
       const enrichment = await enrichSignal(
         { ...event, category: event.category, competitorName: competitor.name },
@@ -162,7 +167,120 @@ export async function monitorCompetitor(competitorId: string) {
     }
   }
 
-  return { competitorId, skipped: false as const, changed: Boolean(previous && previous.hash !== hash), signalsRecorded };
+  // Advance the watermark AFTER recording: advancing first silently lost the
+  // whole diff whenever extraction/enrichment failed mid-step (the retry then
+  // compared the new baseline against itself). The dedup check above keeps
+  // replays from double-recording instead.
+  await db.competitor.update({
+    where: { id: competitor.id },
+    data: {
+      profile: { ...profile, monitor: { hash, excerpt, checkedAt: new Date().toISOString() } },
+    },
+  });
+
+  return { competitorId, skipped: false as const, changed, signalsRecorded };
+}
+
+const clampFactor = (v: unknown) =>
+  Math.min(100, Math.max(0, typeof v === "number" && Number.isFinite(v) ? v : 50));
+
+const FACTOR_KEYS: (keyof ThreatFactors)[] = [
+  "growth",
+  "funding",
+  "hiring",
+  "technology",
+  "featureVelocity",
+  "traffic",
+  "marketing",
+  "customerSatisfaction",
+];
+
+function toFactors(raw: Partial<Record<keyof ThreatFactors, number>> | undefined): ThreatFactors {
+  const factors = {} as ThreatFactors;
+  for (const key of FACTOR_KEYS) factors[key] = clampFactor(raw?.[key]);
+  return factors;
+}
+
+/**
+ * Baseline threat scores for a whole company's un-scored competitors in ONE
+ * AI call (onboarding fans out 10+ competitors — per-competitor calls burn
+ * free-tier rate limits and stretch the pipeline by minutes). Competitors
+ * the model skips get neutral factors so "Highest threat" never sits empty.
+ */
+export async function assessBaselineThreats(companyId: string) {
+  const company = await db.company.findUnique({
+    where: { id: companyId },
+    select: { name: true, industry: true, description: true },
+  });
+  const competitors = await db.competitor.findMany({
+    where: { companyId, status: { not: "DISMISSED" }, threatScore: null },
+    take: 15,
+    select: { id: true, name: true, domain: true, description: true },
+  });
+  if (!company || competitors.length === 0) {
+    return { companyId, scored: 0 };
+  }
+
+  let byId = new Map<string, Partial<Record<keyof ThreatFactors, number>>>();
+  try {
+    const res = await ai.complete({
+      task: "scoring",
+      json: true,
+      temperature: 0.2,
+      maxTokens: Math.min(4000, 300 + competitors.length * 220),
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a competitive-intelligence analyst. For EACH competitor in the list, estimate threat " +
+            "factors relative to the user's company. Return strict JSON: " +
+            '{ "assessments": [{ "id": the competitor id echoed VERBATIM, and integer values 0-100 for ' +
+            '"growth", "funding", "hiring", "technology", "featureVelocity", "traffic", "marketing", ' +
+            '"customerSatisfaction" }] }. One entry per competitor, same ids. ' +
+            "Base estimates only on the provided profiles; use 50 when there is no evidence either way.",
+        },
+        {
+          role: "user",
+          content:
+            `User's company: ${company.name ?? "unknown"} (${company.industry ?? "unknown industry"}). ` +
+            `${company.description ?? ""}\n\nCOMPETITORS:\n` +
+            competitors
+              .map((c) => `- id: ${c.id} — ${c.name} (${c.domain}): ${c.description ?? "no description"}`)
+              .join("\n"),
+        },
+      ],
+    });
+    const parsed = parseAiJson<{
+      assessments?: ({ id?: string } & Partial<Record<keyof ThreatFactors, number>>)[];
+    }>(res.text);
+    byId = new Map(
+      (parsed.assessments ?? [])
+        .filter((a): a is { id: string } & Partial<Record<keyof ThreatFactors, number>> =>
+          Boolean(a.id)
+        )
+        .map((a) => [a.id, a])
+    );
+  } catch {
+    // Neutral baselines below still populate the dashboard; the next
+    // per-competitor assessment refines them.
+  }
+
+  await db.$transaction(
+    competitors.flatMap((competitor) => {
+      const { score, breakdown } = computeThreatScore(toFactors(byId.get(competitor.id)));
+      return [
+        db.scoreSnapshot.create({
+          data: { competitorId: competitor.id, threatScore: score, breakdown },
+        }),
+        db.competitor.update({
+          where: { id: competitor.id },
+          data: { threatScore: score },
+        }),
+      ];
+    })
+  );
+
+  return { companyId, scored: competitors.length };
 }
 
 /**
@@ -215,19 +333,7 @@ export async function assessCompetitorThreat(competitorId: string) {
   });
 
   const raw = parseAiJson<Partial<Record<keyof ThreatFactors, number>>>(res.text);
-  const clamp = (v: unknown) =>
-    Math.min(100, Math.max(0, typeof v === "number" && Number.isFinite(v) ? v : 50));
-
-  const factors: ThreatFactors = {
-    growth: clamp(raw.growth),
-    funding: clamp(raw.funding),
-    hiring: clamp(raw.hiring),
-    technology: clamp(raw.technology),
-    featureVelocity: clamp(raw.featureVelocity),
-    traffic: clamp(raw.traffic),
-    marketing: clamp(raw.marketing),
-    customerSatisfaction: clamp(raw.customerSatisfaction),
-  };
+  const factors = toFactors(raw);
 
   const { score, breakdown } = computeThreatScore(factors);
 

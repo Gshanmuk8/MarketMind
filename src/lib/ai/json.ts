@@ -4,16 +4,33 @@
  * prose — never let that take down a pipeline step.
  */
 export function parseAiJson<T>(text: string): T {
-  const trimmed = text.trim();
+  // Strip markdown fences first — reasoning models often emit
+  // ```json ... ``` even under response_format.
+  const trimmed = text
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/, "")
+    .trim();
   try {
     return JSON.parse(trimmed) as T;
   } catch {
-    const start = trimmed.indexOf("{");
-    const end = trimmed.lastIndexOf("}");
-    if (start === -1 || end <= start) {
-      throw new Error(`[ai] Model did not return JSON: ${trimmed.slice(0, 200)}`);
+    // Fall back to the outermost object/array — models sometimes preface
+    // JSON with prose ("Here is the analysis:") or append a sign-off.
+    for (const [open, close] of [
+      ["{", "}"],
+      ["[", "]"],
+    ] as const) {
+      const start = trimmed.indexOf(open);
+      const end = trimmed.lastIndexOf(close);
+      if (start !== -1 && end > start) {
+        try {
+          return JSON.parse(trimmed.slice(start, end + 1)) as T;
+        } catch {
+          // Try the next bracket pair.
+        }
+      }
     }
-    return JSON.parse(trimmed.slice(start, end + 1)) as T;
+    throw new Error(`[ai] Model did not return JSON: ${trimmed.slice(0, 200)}`);
   }
 }
 

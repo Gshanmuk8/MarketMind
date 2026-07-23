@@ -43,9 +43,11 @@ async function github<T>(path: string): Promise<{ status: number; data: T | null
 
 /** Candidate org slugs derived from the competitor's identity. */
 function orgCandidates(name: string, domain: string): string[] {
-  const fromDomain = domain.split(".")[0] ?? "";
+  // Second-level label: "app.example.com" → "example", never "app".
+  const parts = domain.split(".");
+  const fromDomain = (parts.length >= 2 ? parts[parts.length - 2] : parts[0]) ?? "";
   const fromName = name.toLowerCase().replace(/[^a-z0-9-]/g, "");
-  return [...new Set([fromDomain, fromName])].filter((c) => c.length >= 2);
+  return [...new Set([fromDomain, fromName])].filter((c): c is string => c.length >= 2);
 }
 
 /**
@@ -70,21 +72,38 @@ export async function monitorCompetitorGitHub(competitorId: string) {
     unknown
   >;
 
-  // Resolve the org once; cache null ONLY on confirmed 404s — a rate-limit
-  // (403) response must not permanently mark the competitor as org-less.
+  // Resolve the org once; cache null ONLY on confirmed outcomes — a
+  // rate-limit (403) response must not permanently mark the competitor as
+  // org-less. Ownership is verified against the org's declared website:
+  // a name-collision org (github.com/nova for nova.app) would otherwise
+  // have a stranger's releases recorded as this competitor's verified facts.
   let org = profile.github?.org;
   if (org === undefined) {
     org = null;
     let confirmed = true;
+    const domain = competitor.domain.toLowerCase();
     for (const candidate of orgCandidates(competitor.name, competitor.domain)) {
-      const { status, data: repos } = await github<GithubRepo[]>(
+      const { status, data: meta } = await github<{ blog?: string | null }>(
+        `/orgs/${candidate}`
+      );
+      if (status === 403 || status === 429) {
+        confirmed = false; // throttled — stop burning the shared budget, retry next sweep
+        break;
+      }
+      if (!meta) {
+        if (status !== 404) confirmed = false; // transient — retry next sweep
+        continue;
+      }
+      if (!(meta.blog ?? "").toLowerCase().includes(domain)) continue; // exists but unverified
+      const { status: repoStatus, data: repos } = await github<GithubRepo[]>(
         `/orgs/${candidate}/repos?sort=pushed&per_page=6&type=public`
       );
       if (repos && repos.length > 0) {
         org = candidate;
         break;
       }
-      if (status !== 404) confirmed = false; // throttled/transient — retry next sweep
+      // 200-with-no-repos is a confirmed answer (nothing to monitor yet).
+      if (!repos && repoStatus !== 404) confirmed = false;
     }
     if (org || confirmed) {
       await db.competitor.update({

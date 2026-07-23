@@ -7,12 +7,14 @@ export async function GET() {
   try {
     await db.$queryRaw`SELECT 1`;
   } catch (error) {
-    database = `error: ${
-      error instanceof Error ? error.message.replace(/\s+/g, " ").trim().slice(0, 220) : "unknown"
-    }`;
+    // Unauthenticated endpoint — log the detail, never return it (connection
+    // strings and hostnames leak infra topology).
+    console.error("[health] database unreachable:", error);
+    database = "error";
   }
+  const healthy = database === "ok";
   return NextResponse.json(
-    { status: "ok", service: "marketmind-ai", database },
-    { status: database === "ok" ? 200 : 503 }
+    { status: healthy ? "ok" : "degraded", service: "marketmind-ai", database },
+    { status: healthy ? 200 : 503 }
   );
 }

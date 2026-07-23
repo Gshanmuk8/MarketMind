@@ -1,12 +1,15 @@
 import { cn } from "@/lib/utils";
 
+/**
+ * Editorial panel — porcelain on the limestone page, closed by a fine
+ * hairline. Square, quiet, architectural. Sections may instead be
+ * rule-separated (no box) with a `.rule` divider; use a Card when a plate
+ * genuinely wants an edge.
+ */
 export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn(
-        "rounded-lg border border-border bg-surface p-6 transition-colors duration-200",
-        className
-      )}
+      className={cn("border border-border bg-surface p-6 transition-colors duration-200", className)}
       {...props}
     />
   );

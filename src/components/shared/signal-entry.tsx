@@ -20,6 +20,9 @@ export function SignalEntry({ signal, competitorName }: SignalEntryProps) {
         {competitorName && <span className="microlabel text-muted">{competitorName}</span>}
         <span className="microlabel">{signal.category.toLowerCase().replace(/_/g, " ")}</span>
         <Badge variant={SEVERITY_BADGE[signal.severity]}>{signal.severity.toLowerCase()}</Badge>
+        {/* Record-level provenance (hard rule): AI-observed events must never
+            read as verified facts. Verified ones carry their source link below. */}
+        {signal.isInference && <Badge variant="inference">AI-observed</Badge>}
         <span className="microlabel ml-auto">
           {signal.detectedAt.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
         </span>

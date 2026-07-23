@@ -18,7 +18,13 @@ export async function PATCH(request: Request, { params }: Params) {
   const body = await request.json().catch(() => null);
   const parsed = updateDecisionSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    // Clients render `error` only when it's a string — a flattened object
+    // would surface as the generic "Request failed."
+    const issue = parsed.error.issues[0];
+    return NextResponse.json(
+      { error: issue ? `${issue.path.join(".") || "request"}: ${issue.message}` : "Invalid request." },
+      { status: 400 }
+    );
   }
 
   try {

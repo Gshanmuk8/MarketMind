@@ -32,7 +32,18 @@ Routing principles:
 
 ## Failure posture
 
-AI unavailability degrades gracefully, never blocks core flows: digests fall back to a stub strategic summary; enrichment failures may store the raw-but-labeled signal at INFO. A hard failure of the full fallback chain throws a descriptive error naming the task.
+AI unavailability degrades gracefully, never blocks core flows: digests fall back to a stub strategic summary; enrichment failures may store the raw-but-labeled signal at INFO. A hard failure of the full fallback chain throws a descriptive error naming the task and every route's failure.
+
+Resilience mechanics inside the AI layer (invisible to callers):
+
+- **Route cooldowns (circuit breaker).** A route that fails is benched in-memory before the chain moves on: hard failures (401/402/403/404 — bad key, no credits, dead model) for 5 minutes; 429s for the provider's own `Retry-After`/retry-delay (capped at 2 min); network/5xx for 30s. Subsequent calls skip benched routes instantly instead of re-paying the failure latency. If _every_ configured route is benched, the chain retries them anyway in soonest-recovery order — cooldowns are an optimization, never a reason to fail a task without trying.
+- **Suspect responses are failures.** A 200 with empty content, or a truncated response (`finish_reason: length`) when JSON was requested, throws inside the provider so the chain falls through — a downstream JSON parse error must never be the first symptom.
+- **Streaming falls back too.** `ai.stream()` probes routes in order until one delivers its first token; failures before the first token advance the chain (after the first token the stream is committed).
+- **Provider dialect quirks stay in the provider.** e.g. OpenAI reasoning-family models (`gpt-5*`, `o*`) take `max_completion_tokens` and fixed temperature; the provider adapts the request so the routing table stays declarative.
+
+## Model routing reality check
+
+Routes must contain only model ids that exist on each provider (verify against `/v1/models` when tuning). Chains for every task end in the currently-healthy commodity set so any single working provider can carry the app; premium routes sit first and re-engage automatically when their keys/credits return.
 
 ## Cost controls
 

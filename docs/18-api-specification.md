@@ -13,7 +13,7 @@
 | Route | Methods | Purpose |
 | --- | --- | --- |
 | `/api/health` | GET | liveness |
-| `/api/companies` | GET, POST | list; create + emit `company/analyze.requested` |
+| `/api/companies` | GET, POST | list; create + emit `company/analyze.requested`. One company per user: POST 409s if another domain is already tracked (change it in Settings) |
 | `/api/decisions` | GET, POST | list decisions; create (CONSIDERING) |
 | `/api/decisions/[id]` | PATCH, DELETE | decide/status/outcome transitions; remove |
 | `/api/competitors` | GET | the user's landscape (non-dismissed, threat-ranked) |

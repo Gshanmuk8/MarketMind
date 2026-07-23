@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowRight, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,11 +23,17 @@ async function createCompany(url: string) {
 /** The single-input company onboarding form. */
 export function OnboardingForm() {
   const router = useRouter();
+  const qc = useQueryClient();
   const [url, setUrl] = useState("");
 
   const mutation = useMutation({
     mutationFn: createCompany,
-    onSuccess: () => router.push("/dashboard"),
+    onSuccess: () => {
+      // Decisions ("New question" gating) and Settings read this cache —
+      // stale "no company" would disable them for the rest of the session.
+      qc.invalidateQueries({ queryKey: ["companies"] });
+      router.push("/dashboard");
+    },
   });
 
   return (
