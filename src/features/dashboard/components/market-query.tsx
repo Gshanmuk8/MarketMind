@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import { CornerDownLeft, Sparkles } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
@@ -48,6 +49,19 @@ export function MarketQuery() {
     setQ(trimmed);
     ask.mutate(trimmed);
   }
+
+  // Auto-run a question handed over from the ⌘K palette (/dashboard?q=…).
+  const searchParams = useSearchParams();
+  const lastRun = useRef<string | null>(null);
+  useEffect(() => {
+    const urlQ = searchParams.get("q")?.trim();
+    if (urlQ && urlQ.length >= 2 && lastRun.current !== urlQ) {
+      lastRun.current = urlQ;
+      setQ(urlQ);
+      ask.mutate(urlQ);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   return (
     <div className="border-b border-[var(--t-line)] px-5 py-5 sm:px-7">
