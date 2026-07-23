@@ -47,6 +47,21 @@ const SEVERITIES = [
 
 const FALLBACK_TZ = ["UTC", "Asia/Kolkata", "America/New_York", "Europe/London", "Asia/Singapore"];
 
+/** Friendly, searchable shortcuts pinned to the top of the timezone list. */
+const COMMON_TZ_LABELED: { value: string; label: string }[] = [
+  { value: "Asia/Kolkata", label: "India — Kolkata / Mumbai (IST)" },
+  { value: "America/New_York", label: "US Eastern — New York" },
+  { value: "America/Chicago", label: "US Central — Chicago" },
+  { value: "America/Los_Angeles", label: "US Pacific — Los Angeles" },
+  { value: "Europe/London", label: "UK — London" },
+  { value: "Europe/Berlin", label: "Central Europe — Berlin / Paris" },
+  { value: "Asia/Dubai", label: "Gulf — Dubai" },
+  { value: "Asia/Singapore", label: "Singapore" },
+  { value: "Asia/Tokyo", label: "Japan — Tokyo" },
+  { value: "Australia/Sydney", label: "Australia — Sydney" },
+  { value: "UTC", label: "UTC" },
+];
+
 const selectClass =
   "h-10 rounded-md border border-border bg-surface-overlay px-2.5 text-sm text-foreground shadow-[inset_0_1px_2px_rgb(35_35_31/0.03)] outline-none transition-colors hover:border-border-strong/40 focus:border-accent/50 focus:ring-2 focus:ring-accent/20";
 
@@ -474,12 +489,19 @@ function DeliveryPreferences({ onNotice }: { onNotice: (m: string) => void }) {
             value={s.timezone}
             onChange={(e) => save.mutate({ timezone: e.target.value })}
           >
-            {zones.map((z) => (
-              <option key={z} value={z}>{z.replace(/_/g, " ")}</option>
-            ))}
+            <optgroup label="Common">
+              {COMMON_TZ_LABELED.map((z) => (
+                <option key={`c-${z.value}`} value={z.value}>{z.label}</option>
+              ))}
+            </optgroup>
+            <optgroup label="All timezones">
+              {zones.map((z) => (
+                <option key={z} value={z}>{z.replace(/_/g, " ")}</option>
+              ))}
+            </optgroup>
           </select>
           <span className="text-xs text-faint">
-            Delivery times use this zone. Type to search the list.
+            Delivery times use this zone — India is at the top of the list.
           </span>
         </label>
 
