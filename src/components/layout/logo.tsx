@@ -9,11 +9,16 @@ import { cn } from "@/lib/utils";
 export function LogoMark({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 28 28" fill="none" aria-hidden className={cn("shrink-0", className)}>
+      {/* rings */}
       <circle cx="14" cy="14" r="11.5" stroke="var(--color-accent)" strokeOpacity="0.25" strokeWidth="1.3" />
       <circle cx="14" cy="14" r="7" stroke="var(--color-accent)" strokeOpacity="0.45" strokeWidth="1.3" />
-      {/* sweep + blip */}
-      <path d="M14 14 L22.8 7.4" stroke="var(--color-accent)" strokeWidth="1.4" strokeLinecap="round" />
-      <circle cx="20" cy="9" r="2.5" fill="var(--color-score)" />
+      {/* rotating sweep — a faint wedge trailing a bright edge */}
+      <g className="radar-sweep">
+        <path d="M14 14 L14 2.5 A11.5 11.5 0 0 1 21.5 5.2 Z" fill="var(--color-accent)" fillOpacity="0.14" />
+        <line x1="14" y1="14" x2="14" y2="2.5" stroke="var(--color-accent)" strokeWidth="1.2" strokeLinecap="round" />
+      </g>
+      {/* the tracked competitor — a gold blip — and the centre */}
+      <circle cx="20" cy="9" r="2.4" fill="var(--color-score)" />
       <circle cx="14" cy="14" r="1.7" fill="var(--color-accent)" />
     </svg>
   );

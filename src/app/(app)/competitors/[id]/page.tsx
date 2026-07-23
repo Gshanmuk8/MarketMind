@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { TerminalShell, TerminalHeader, TerminalSignalRow, stamp } from "@/components/terminal/terminal";
+import { CountUp } from "@/components/ui/count-up";
 import { getSessionUser } from "@/lib/session";
 import { getCompetitor } from "@/features/competitors/service";
 import { ActivityTimeline } from "@/features/competitor-timeline/components/activity-timeline";
@@ -115,7 +116,7 @@ export default async function CompetitorProfilePage({
             className="font-data mt-2 text-4xl font-medium tabular-nums text-[var(--t-gold)]"
             style={{ textShadow: "0 0 22px rgba(208,183,104,0.28)" }}
           >
-            {threat ?? "—"}
+            {threat != null ? <CountUp value={threat} /> : "—"}
           </p>
           {threatDelta != null && threatDelta !== 0 && (
             <p className="font-data mt-1 text-[11px] text-[var(--t-muted)]">
@@ -130,7 +131,7 @@ export default async function CompetitorProfilePage({
               Opportunity
             </p>
             <p className="font-data mt-2 text-4xl font-medium tabular-nums text-[var(--t-accent)]">
-              {opportunity}
+              <CountUp value={opportunity} />
             </p>
           </div>
         )}

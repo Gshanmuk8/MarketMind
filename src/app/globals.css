@@ -139,6 +139,20 @@ h4 {
   }
 }
 
+/* Living brand — a slow radar sweep inside the logo mark (monitoring, not
+   loading). Rotates around the 28px viewBox centre; stilled by the
+   reduced-motion query below. */
+.radar-sweep {
+  transform-box: view-box;
+  transform-origin: 14px 14px;
+  animation: radarSweep 7s linear infinite;
+}
+@keyframes radarSweep {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Premium loading shimmer — a light sweep across skeleton placeholders. */
 .shimmer {
   position: relative;

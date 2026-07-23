@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { FileText } from "lucide-react";
+import { ArrowRight, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -84,23 +84,35 @@ export function ReportList() {
           description="Weekly reports generate automatically every Monday once signals are flowing — or generate one now."
         />
       ) : (
-        <ol className="border-t border-border">
+        <ol className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {reports.map((report) => (
-            <li key={report.id} className="border-b border-border py-6">
-              <div className="flex flex-wrap items-center gap-3">
-                <Badge>{report.type.toLowerCase()}</Badge>
-                <span className="microlabel">
-                  {new Date(report.periodStart).toLocaleDateString("en-US", { month: "short", day: "numeric" })} —{" "}
-                  {new Date(report.periodEnd).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+            <li key={report.id}>
+              <Link
+                href={`/reports/${report.id}`}
+                className="group relative block h-full overflow-hidden rounded-xl border border-border bg-surface p-5 shadow-[var(--shadow-card)] transition-all duration-200 hover:-translate-y-px hover:border-border-strong/30 hover:shadow-[var(--shadow-lifted)]"
+              >
+                {/* accent rail — the shared DNA */}
+                <span
+                  aria-hidden
+                  className="absolute inset-y-0 left-0 w-0.5 bg-accent/0 transition-colors duration-200 group-hover:bg-accent"
+                />
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <Badge variant="accent">{report.type.toLowerCase()}</Badge>
+                  <span className="font-data text-[11px] text-faint">
+                    {new Date(report.periodStart).toLocaleDateString("en-US", { month: "short", day: "numeric" })} —{" "}
+                    {new Date(report.periodEnd).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  </span>
+                  <Badge variant="inference" className="ml-auto">AI-reasoned</Badge>
+                </div>
+                <h3 className="font-display mt-3 text-xl leading-snug text-foreground">{report.title}</h3>
+                <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted">
+                  {report.executiveSummary}
+                </p>
+                <span className="font-data mt-4 inline-flex items-center gap-1 text-[11px] uppercase tracking-wider text-accent">
+                  Read the brief
+                  <ArrowRight className="size-3 transition-transform duration-200 group-hover:translate-x-0.5" strokeWidth={1.5} />
                 </span>
-                <Badge variant="inference">AI-reasoned</Badge>
-              </div>
-              <Link href={`/reports/${report.id}`} className="mt-3 block font-sans text-base font-medium hover:underline">
-                {report.title}
               </Link>
-              <p className="mt-1.5 line-clamp-2 max-w-2xl text-sm leading-relaxed text-muted">
-                {report.executiveSummary}
-              </p>
             </li>
           ))}
         </ol>

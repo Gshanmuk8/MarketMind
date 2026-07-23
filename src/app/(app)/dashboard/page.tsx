@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { LiveRefresh } from "@/components/shared/live-refresh";
+import { CountUp } from "@/components/ui/count-up";
 import { TerminalShell, TerminalHeader, LiveDot, TerminalSignalRow } from "@/components/terminal/terminal";
 import { getSessionUser } from "@/lib/session";
 import { getBriefing, getSignalMomentum } from "@/features/dashboard/service";
@@ -96,14 +97,16 @@ export default async function DashboardPage() {
               className="font-data mt-3 text-5xl font-medium tabular-nums"
               style={{ textShadow: "0 0 24px rgba(156,187,132,0.22)" }}
             >
-              {signalsLastDay}
+              <CountUp value={signalsLastDay} />
             </p>
           </div>
           <div className="bg-[var(--t-bg)] px-5 py-6 sm:px-7">
             <p className="font-data text-[10px] uppercase tracking-[0.2em] text-[var(--t-faint)]">
               Competitors tracked
             </p>
-            <p className="font-data mt-3 text-5xl font-medium tabular-nums">{trackedCount}</p>
+            <p className="font-data mt-3 text-5xl font-medium tabular-nums">
+              <CountUp value={trackedCount} />
+            </p>
             {suggestedCount > 0 && (
               <Link
                 href="/competitors"
@@ -123,7 +126,7 @@ export default async function DashboardPage() {
                   className="font-data mt-3 text-5xl font-medium tabular-nums text-[var(--t-gold)]"
                   style={{ textShadow: "0 0 24px rgba(208,183,104,0.28)" }}
                 >
-                  {topThreat.threatScore}
+                  <CountUp value={topThreat.threatScore ?? 0} />
                 </p>
                 <Link
                   href={`/competitors/${topThreat.id}`}
