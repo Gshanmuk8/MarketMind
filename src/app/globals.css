@@ -251,6 +251,27 @@ h4 {
   }
 }
 
+/* Calm scroll-reveal — content settles as it enters the viewport, the way a
+   page turns. Progressive: JS adds `.reveal-in` on intersection; a <noscript>
+   override and the reduced-motion rule keep content visible without it. */
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 0.7s var(--ease-out-soft),
+    transform 0.7s var(--ease-out-soft);
+}
+.reveal-in {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* Living brand — a slow radar sweep inside the logo mark (monitoring, not
    loading). Rotates around the 28px viewBox centre; stilled by the
    reduced-motion query below. */

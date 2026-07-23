@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { LogoMark } from "@/components/layout/logo";
+import { Reveal } from "@/components/shared/reveal";
 import { SessionRedirect } from "@/features/auth/components/session-redirect";
 import { siteConfig } from "@/config/site";
 
@@ -45,6 +46,10 @@ export default async function LandingPage({
 
   return (
     <main className="min-h-dvh">
+      {/* Without JS the scroll-reveal never fires — keep every chapter visible. */}
+      <noscript>
+        <style>{`.reveal{opacity:1;transform:none}`}</style>
+      </noscript>
       {/* Confirmation links may land here with hash tokens — finish sign-in. */}
       <SessionRedirect to="/dashboard" />
       {/* Folio line */}
@@ -75,14 +80,15 @@ export default async function LandingPage({
           <div className="rise lg:col-span-7">
             <p className="microlabel mb-8">A briefing, not a dashboard</p>
             <h1 className="display-1">
-              Know your market before&nbsp;it&nbsp;moves.
+              Know your market
+              <br className="hidden sm:block" /> before it moves.
             </h1>
             <p className="mt-8 max-w-md text-lg leading-relaxed text-muted">
-              {siteConfig.name} tracks your competitors and reads everything your
-              market publishes — then returns one thing: what changed, why it
-              matters, and what to do next.
+              {siteConfig.name} watches your competitors and everything your market
+              publishes — and returns what changed, why it matters, and what to do
+              next.
             </p>
-            <div className="mt-12 flex flex-wrap items-center gap-6">
+            <div className="mt-12 flex flex-wrap items-center gap-x-8 gap-y-5">
               <Link
                 href="/signup"
                 className="group inline-flex h-12 items-center gap-3 bg-ink-wash px-7 text-base font-medium text-background shadow-[var(--shadow-card)] transition-all duration-300 ease-[var(--ease-out-soft)] hover:-translate-y-px hover:bg-foreground hover:shadow-[var(--shadow-lifted)]"
@@ -93,8 +99,20 @@ export default async function LandingPage({
                   strokeWidth={1.5}
                 />
               </Link>
-              <p className="microlabel">One URL · ~1–3 minutes</p>
+              <a
+                href="#specimen"
+                className="group inline-flex items-center gap-2 text-sm text-muted transition-colors hover:text-foreground"
+              >
+                Read a live signal
+                <span
+                  aria-hidden
+                  className="transition-transform duration-300 ease-[var(--ease-out-soft)] group-hover:translate-y-0.5"
+                >
+                  ↓
+                </span>
+              </a>
             </div>
+            <p className="microlabel mt-6">One URL · ~1–3 minutes · public sources only</p>
           </div>
 
           {/* Annotation column — the method, set as marginalia */}
@@ -119,10 +137,10 @@ export default async function LandingPage({
       </section>
 
       {/* Specimen — one signal, typeset as it arrives in the product */}
-      <section className="border-t border-border bg-surface">
-        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-12 px-6 py-16 sm:py-24 lg:grid-cols-12 lg:px-10">
+      <section id="specimen" className="scroll-mt-16 border-t border-border bg-surface">
+        <Reveal className="mx-auto grid max-w-6xl grid-cols-1 gap-12 px-6 py-16 sm:py-24 lg:grid-cols-12 lg:px-10">
           <div className="lg:col-span-4">
-            <p className="microlabel mb-4">Specimen</p>
+            <p className="microlabel mb-4">Specimen · one signal, in full</p>
             <h2 className="display-2">
               Every signal arrives already&nbsp;thought&nbsp;through.
             </h2>
@@ -132,7 +150,7 @@ export default async function LandingPage({
             </p>
           </div>
 
-          <article className="rise lg:col-span-7 lg:col-start-6">
+          <article className="lg:col-span-7 lg:col-start-6">
             <div className="hover-lift border border-border bg-surface-overlay p-6 shadow-[var(--shadow-card)] sm:p-8 lg:p-10">
               <div className="flex flex-wrap items-center gap-3">
                 <p className="microlabel">Signal · Competitor pricing</p>
@@ -166,12 +184,12 @@ export default async function LandingPage({
               </div>
             </div>
           </article>
-        </div>
+        </Reveal>
       </section>
 
       {/* Close */}
       <section className="border-t border-border">
-        <div className="mx-auto flex max-w-6xl flex-col items-start gap-8 px-6 py-16 sm:py-24 lg:px-10">
+        <Reveal className="mx-auto flex max-w-6xl flex-col items-start gap-8 px-6 py-16 sm:py-24 lg:px-10">
           <h2 className="display-2 max-w-2xl">
             The first thing you open every morning.
           </h2>
@@ -185,7 +203,7 @@ export default async function LandingPage({
               strokeWidth={1.5}
             />
           </Link>
-        </div>
+        </Reveal>
       </section>
 
       {/* Colophon */}
