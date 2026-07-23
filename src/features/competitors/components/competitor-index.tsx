@@ -5,15 +5,26 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Sparkline, trendGlyph } from "@/components/ui/sparkline";
 import { EmptyState } from "@/components/shared/empty-state";
+import { cn } from "@/lib/utils";
 import {
   useCompetitors,
   useTrackAllCompetitors,
   useUpdateCompetitorStatus,
   type CompetitorRow,
+  type CompetitorSpark,
 } from "../hooks/use-competitors";
 
-function CompetitorEntry({ competitor, index }: { competitor: CompetitorRow; index: number }) {
+function CompetitorEntry({
+  competitor,
+  index,
+  spark,
+}: {
+  competitor: CompetitorRow;
+  index: number;
+  spark?: CompetitorSpark;
+}) {
   const update = useUpdateCompetitorStatus();
   const suggested = competitor.status === "SUGGESTED";
 
@@ -53,6 +64,29 @@ function CompetitorEntry({ competitor, index }: { competitor: CompetitorRow; ind
           <p className="font-display text-3xl text-score">{competitor.threatScore}</p>
         ) : (
           <p className="text-sm text-faint">Awaiting first assessment</p>
+        )}
+        {spark && (
+          <div className="mt-2 max-w-[13rem]">
+            <div className="flex items-center gap-2 text-score">
+              <Sparkline data={spark.spark} className="h-4 w-16" />
+              <span
+                className={cn(
+                  "font-data text-xs",
+                  spark.trend === "up"
+                    ? "text-score"
+                    : spark.trend === "down"
+                      ? "text-muted"
+                      : "text-faint"
+                )}
+                title={`Momentum ${spark.trend === "up" ? "increasing" : spark.trend === "down" ? "cooling" : "steady"}`}
+              >
+                {trendGlyph(spark.trend)}
+              </span>
+            </div>
+            {spark.last && (
+              <p className="mt-1 truncate text-[11px] text-faint">Last: {spark.last}</p>
+            )}
+          </div>
         )}
       </div>
 
@@ -115,6 +149,7 @@ export function CompetitorIndex() {
   }
 
   const competitors = data.competitors;
+  const momentum = data.momentum ?? {};
   if (competitors.length === 0) {
     return (
       <EmptyState
@@ -156,7 +191,12 @@ export function CompetitorIndex() {
       )}
       <ol className="border-t border-border">
         {competitors.map((competitor, i) => (
-          <CompetitorEntry key={competitor.id} competitor={competitor} index={i + 1} />
+          <CompetitorEntry
+            key={competitor.id}
+            competitor={competitor}
+            index={i + 1}
+            spark={momentum[competitor.id]}
+          />
         ))}
       </ol>
     </div>

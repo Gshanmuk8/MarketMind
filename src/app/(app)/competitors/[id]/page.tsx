@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { TerminalShell, TerminalHeader, TerminalSignalRow, stamp } from "@/components/terminal/terminal";
 import { CountUp } from "@/components/ui/count-up";
+import { Sparkline, trendGlyph } from "@/components/ui/sparkline";
 import { getSessionUser } from "@/lib/session";
-import { getCompetitor } from "@/features/competitors/service";
+import { getCompetitor, getCompetitorMomentum } from "@/features/competitors/service";
 import { ActivityTimeline } from "@/features/competitor-timeline/components/activity-timeline";
 import type { InsightType, ImpactLevel } from "@prisma/client";
 
@@ -50,6 +51,8 @@ export default async function CompetitorProfilePage({
   const { id } = await params;
   const competitor = await getCompetitor(user.id, id);
   if (!competitor) notFound();
+
+  const spark = (await getCompetitorMomentum(user.id))[id];
 
   const snapshot = competitor.scoreSnapshots[0];
   const previous = competitor.scoreSnapshots[1];
@@ -123,6 +126,19 @@ export default async function CompetitorProfilePage({
               {threatDelta > 0 ? "▲" : "▼"} {Math.abs(threatDelta)}
               {previous ? ` since ${stamp(previous.capturedAt).split(" · ")[0]}` : ""}
             </p>
+          )}
+          {spark && (
+            <div className="mt-3">
+              <div className="flex items-center gap-2" style={{ color: "var(--t-gold)" }}>
+                <Sparkline data={spark.spark} className="h-5 w-24" />
+                <span className="font-data text-xs">{trendGlyph(spark.trend)}</span>
+              </div>
+              {spark.last && (
+                <p className="mt-1.5 max-w-[16rem] truncate text-[11px] text-[var(--t-faint)]">
+                  Last: {spark.last}
+                </p>
+              )}
+            </div>
           )}
         </div>
         {opportunity != null && (

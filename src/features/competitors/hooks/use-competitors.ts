@@ -2,8 +2,14 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Competitor, CompetitorStatus } from "@prisma/client";
+import type { CompetitorSpark } from "@/features/competitors/service";
 
 export type CompetitorRow = Competitor & { company: { id: string; name: string | null } };
+export type { CompetitorSpark };
+export type CompetitorsResponse = {
+  competitors: CompetitorRow[];
+  momentum: Record<string, CompetitorSpark>;
+};
 
 async function jsonFetch<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
@@ -24,7 +30,7 @@ const KEY = ["competitors"];
 export function useCompetitors() {
   return useQuery({
     queryKey: KEY,
-    queryFn: () => jsonFetch<{ competitors: CompetitorRow[] }>("/api/competitors"),
+    queryFn: () => jsonFetch<CompetitorsResponse>("/api/competitors"),
   });
 }
 

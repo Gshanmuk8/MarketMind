@@ -3,8 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
+import { Sparkline, trendGlyph } from "@/components/ui/sparkline";
 import { cn } from "@/lib/utils";
-import { useCompetitors, useUpdateCompetitorStatus, type CompetitorRow } from "../hooks/use-competitors";
+import {
+  useCompetitors,
+  useUpdateCompetitorStatus,
+  type CompetitorRow,
+  type CompetitorSpark,
+} from "../hooks/use-competitors";
 
 const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
 
@@ -21,6 +27,7 @@ export function LandscapeRadar() {
   const [hovered, setHovered] = useState<string | null>(null);
 
   const competitors = data?.competitors ?? [];
+  const momentum = data?.momentum ?? {};
   // Rendered only when there's a landscape to plot; the list below owns the
   // loading / empty / error states so nothing is duplicated.
   if (competitors.length < 2) return null;
@@ -100,7 +107,14 @@ export function LandscapeRadar() {
                 {c.name}
               </span>
 
-              {isHover && <HoverCard c={c} pending={update.isPending} onCurate={(status) => update.mutate({ id: c.id, status })} />}
+              {isHover && (
+                <HoverCard
+                  c={c}
+                  spark={momentum[c.id]}
+                  pending={update.isPending}
+                  onCurate={(status) => update.mutate({ id: c.id, status })}
+                />
+              )}
             </div>
           );
         })}
@@ -122,10 +136,12 @@ export function LandscapeRadar() {
 
 function HoverCard({
   c,
+  spark,
   pending,
   onCurate,
 }: {
   c: CompetitorRow;
+  spark?: CompetitorSpark;
   pending: boolean;
   onCurate: (status: "TRACKING" | "DISMISSED") => void;
 }) {
@@ -151,6 +167,27 @@ function HoverCard({
           </p>
         </div>
       </div>
+
+      {spark && (
+        <div className="mt-3 border-t border-border pt-3">
+          <div className="flex items-center justify-between">
+            <span className="microlabel">Momentum</span>
+            <span
+              className={cn(
+                "font-data text-xs",
+                spark.trend === "up" ? "text-score" : spark.trend === "down" ? "text-muted" : "text-faint"
+              )}
+            >
+              {trendGlyph(spark.trend)}{" "}
+              {spark.trend === "up" ? "heating up" : spark.trend === "down" ? "cooling" : "steady"}
+            </span>
+          </div>
+          <div className="mt-1.5 text-score">
+            <Sparkline data={spark.spark} className="h-5 w-full" />
+          </div>
+          {spark.last && <p className="mt-1.5 truncate text-[11px] text-faint">Last: {spark.last}</p>}
+        </div>
+      )}
 
       <div className="mt-3 flex gap-1.5">
         {c.status !== "TRACKING" && (
