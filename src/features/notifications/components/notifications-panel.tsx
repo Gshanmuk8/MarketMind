@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { ChannelType, NotificationChannel } from "@prisma/client";
-import { Mail, Send, Trash2 } from "lucide-react";
+import type { ChannelType, NotificationChannel, NotificationSettings } from "@prisma/client";
+import { Clock, Mail, Send, SlidersHorizontal, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 async function jsonFetch<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, { headers: { "Content-Type": "application/json" }, ...init });
@@ -23,29 +24,79 @@ interface ChannelsResponse {
   available: ChannelType[];
 }
 
-const KEY = ["notification-channels"];
+const CHANNELS_KEY = ["notification-channels"];
+const SETTINGS_KEY = ["notification-settings"];
+
+const DAY_NAMES = ["", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const FREQUENCIES = [
+  { value: "DAILY", label: "Every day" },
+  { value: "WEEKDAYS", label: "Weekdays (Mon–Fri)" },
+  { value: "WEEKLY", label: "Weekly" },
+  { value: "MONTHLY", label: "Monthly" },
+  { value: "INSTANT_ONLY", label: "No digest (instant alerts only)" },
+] as const;
+const SEVERITIES = [
+  { value: "INFO", label: "Everything" },
+  { value: "NOTABLE", label: "Notable and up" },
+  { value: "IMPORTANT", label: "Important and up" },
+  { value: "CRITICAL", label: "Critical only" },
+] as const;
+
+const COMMON_TZ = [
+  "UTC",
+  "Asia/Kolkata",
+  "America/New_York",
+  "America/Chicago",
+  "America/Denver",
+  "America/Los_Angeles",
+  "America/Sao_Paulo",
+  "Europe/London",
+  "Europe/Paris",
+  "Europe/Berlin",
+  "Asia/Dubai",
+  "Asia/Singapore",
+  "Asia/Tokyo",
+  "Australia/Sydney",
+];
+
+const selectClass =
+  "h-9 rounded-md border border-border bg-surface px-2 text-sm text-foreground outline-none focus-visible:border-border-strong";
 
 function destinationOf(channel: NotificationChannel): string {
   const config = (channel.config ?? {}) as { email?: string; chatId?: string };
   return config.email ?? config.chatId ?? "—";
 }
 
+function scheduleSummary(c: NotificationChannel): string {
+  if (c.frequency === "INSTANT_ONLY") return "Instant alerts only";
+  const when =
+    c.frequency === "WEEKLY"
+      ? `Weekly · ${DAY_NAMES[c.weeklyDay ?? 1]}`
+      : c.frequency === "MONTHLY"
+        ? `Monthly · day ${c.monthlyDay ?? 1}`
+        : c.frequency === "WEEKDAYS"
+          ? "Weekdays"
+          : "Daily";
+  return `${when} · ${c.deliveryTime}`;
+}
+
 /**
- * The delivery desk (doc 12): connect email / Telegram so the weekly
- * Monday Morning Memo reaches the founder without signing in.
+ * The delivery desk (doc 12): connect email / Telegram, then control when,
+ * how often, and how urgent — per-channel schedule + per-user timezone and
+ * quiet hours. Existing add / test / pause / remove behavior is unchanged.
  */
 export function NotificationsPanel() {
   const qc = useQueryClient();
   const [adding, setAdding] = useState<ChannelType | null>(null);
   const [value, setValue] = useState("");
+  const [editing, setEditing] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
-  const { data, isPending, isError, refetch } = useQuery({
-    queryKey: KEY,
+  const channelsQ = useQuery({
+    queryKey: CHANNELS_KEY,
     queryFn: () => jsonFetch<ChannelsResponse>("/api/notifications"),
   });
-
-  const invalidate = () => qc.invalidateQueries({ queryKey: KEY });
+  const invalidate = () => qc.invalidateQueries({ queryKey: CHANNELS_KEY });
 
   const add = useMutation({
     mutationFn: (input: { type: ChannelType; config: Record<string, string> }) =>
@@ -53,7 +104,7 @@ export function NotificationsPanel() {
     onSuccess: () => {
       setAdding(null);
       setValue("");
-      setNotice("Channel added. Send a test to confirm it's connected.");
+      setNotice("Channel added. Set its schedule below, then send a test.");
       invalidate();
     },
     onError: (e) => setNotice((e as Error).message),
@@ -82,6 +133,17 @@ export function NotificationsPanel() {
     onError: (e) => setNotice((e as Error).message),
   });
 
+  const saveSchedule = useMutation({
+    mutationFn: ({ id, ...body }: { id: string } & Record<string, unknown>) =>
+      jsonFetch(`/api/notifications/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+    onSuccess: () => {
+      setEditing(null);
+      setNotice("Schedule saved.");
+      invalidate();
+    },
+    onError: (e) => setNotice((e as Error).message),
+  });
+
   function submitAdd(e: React.FormEvent) {
     e.preventDefault();
     if (!adding) return;
@@ -90,122 +152,360 @@ export function NotificationsPanel() {
     add.mutate({ type: adding, config });
   }
 
-  const channels = data?.channels ?? [];
-  const available = data?.available ?? [];
+  const channels = channelsQ.data?.channels ?? [];
+  const available = channelsQ.data?.available ?? [];
 
   return (
     <section>
-      <p className="microlabel mb-1">Delivery — the Monday Morning Memo</p>
-      <p className="mb-4 max-w-lg text-sm text-muted">
-        Your weekly intelligence report, delivered where you already are. Connect a channel and it
-        arrives automatically — no need to sign in to read it.
+      <p className="microlabel mb-1">Delivery — memos, digests &amp; alerts</p>
+      <p className="mb-6 max-w-lg text-sm text-muted">
+        Your intelligence, delivered where you already are. Connect a channel, then choose exactly
+        when it arrives, how often, and how urgent it has to be.
       </p>
 
-      {isPending ? (
-        <Skeleton className="h-24" />
-      ) : isError ? (
-        <div className="flex items-center gap-3">
-          <p className="text-sm text-critical">Couldn&apos;t load your channels.</p>
-          <Button variant="secondary" size="sm" onClick={() => refetch()}>
-            Retry
-          </Button>
-        </div>
-      ) : (
-        <>
-          {channels.length > 0 && (
-            <div className="border-t border-border">
-              {channels.map((channel) => (
-                <div
-                  key={channel.id}
-                  className="flex flex-wrap items-center gap-3 border-b border-border py-4"
-                >
-                  <Badge variant={channel.enabled ? "live" : "default"}>
-                    {channel.type.toLowerCase()}
-                  </Badge>
-                  <span className="break-all font-data text-sm">{destinationOf(channel)}</span>
-                  {!channel.enabled && <span className="microlabel text-faint">paused</span>}
-                  <div className="ml-auto flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      loading={test.isPending && test.variables === channel.id}
-                      onClick={() => test.mutate(channel.id)}
-                    >
-                      <Send className="size-3.5" strokeWidth={1.5} /> Test
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      loading={toggle.isPending && toggle.variables?.id === channel.id}
-                      onClick={() => toggle.mutate({ id: channel.id, enabled: !channel.enabled })}
-                    >
-                      {channel.enabled ? "Pause" : "Resume"}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      loading={remove.isPending && remove.variables === channel.id}
-                      onClick={() => remove.mutate(channel.id)}
-                      aria-label="Remove channel"
-                    >
-                      <Trash2 className="size-4" strokeWidth={1.5} />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+      <DeliveryPreferences onNotice={setNotice} />
 
-          {adding ? (
-            <form onSubmit={submitAdd} className="mt-4 flex flex-col gap-2">
-              <Input
-                autoFocus
-                type={adding === "EMAIL" ? "email" : "text"}
-                placeholder={adding === "EMAIL" ? "you@company.com" : "Telegram chat id (e.g. 123456789)"}
-                value={value}
-                onChange={(e) => setValue(e.target.value)}
-                required
-                className="max-w-sm"
-              />
-              {adding === "TELEGRAM" && (
-                <p className="max-w-lg text-xs text-faint">
-                  Start a chat with our bot, then message <span className="font-data">@userinfobot</span> to
-                  get your numeric chat id and paste it here.
-                </p>
-              )}
-              <div className="flex gap-2">
-                <Button type="submit" size="sm" loading={add.isPending}>
-                  {add.isPending ? "Adding…" : "Add channel"}
-                </Button>
-                <Button type="button" variant="ghost" size="sm" onClick={() => setAdding(null)}>
-                  Cancel
-                </Button>
+      <div className="mt-10">
+        <p className="microlabel mb-3">Channels</p>
+        {channelsQ.isPending ? (
+          <Skeleton className="h-24" />
+        ) : channelsQ.isError ? (
+          <div className="flex items-center gap-3">
+            <p className="text-sm text-critical">Couldn&apos;t load your channels.</p>
+            <Button variant="secondary" size="sm" onClick={() => channelsQ.refetch()}>
+              Retry
+            </Button>
+          </div>
+        ) : (
+          <>
+            {channels.length > 0 && (
+              <div className="border-t border-border">
+                {channels.map((channel) => (
+                  <div key={channel.id} className="border-b border-border py-4">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <Badge variant={channel.enabled ? "live" : "default"}>
+                        {channel.type.toLowerCase()}
+                      </Badge>
+                      <span className="break-all font-data text-sm">{destinationOf(channel)}</span>
+                      <span className="flex items-center gap-1.5 text-xs text-faint">
+                        <Clock className="size-3" strokeWidth={1.5} /> {scheduleSummary(channel)}
+                        {channel.instantAlerts && " · instant"}
+                      </span>
+                      {!channel.enabled && <span className="microlabel text-faint">paused</span>}
+                      <div className="ml-auto flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditing(editing === channel.id ? null : channel.id)}
+                        >
+                          <SlidersHorizontal className="size-3.5" strokeWidth={1.5} /> Schedule
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          loading={test.isPending && test.variables === channel.id}
+                          onClick={() => test.mutate(channel.id)}
+                        >
+                          <Send className="size-3.5" strokeWidth={1.5} /> Test
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          loading={toggle.isPending && toggle.variables?.id === channel.id}
+                          onClick={() => toggle.mutate({ id: channel.id, enabled: !channel.enabled })}
+                        >
+                          {channel.enabled ? "Pause" : "Resume"}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          loading={remove.isPending && remove.variables === channel.id}
+                          onClick={() => remove.mutate(channel.id)}
+                          aria-label="Remove channel"
+                        >
+                          <Trash2 className="size-4" strokeWidth={1.5} />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {editing === channel.id && (
+                      <ScheduleEditor
+                        channel={channel}
+                        saving={saveSchedule.isPending}
+                        onCancel={() => setEditing(null)}
+                        onSave={(body) => saveSchedule.mutate({ id: channel.id, ...body })}
+                      />
+                    )}
+                  </div>
+                ))}
               </div>
-            </form>
-          ) : (
-            <div className="mt-4 flex flex-wrap gap-2">
-              {available.includes("EMAIL") && (
-                <Button variant="secondary" size="sm" onClick={() => { setAdding("EMAIL"); setValue(""); }}>
-                  <Mail className="size-3.5" strokeWidth={1.5} /> Add email
-                </Button>
-              )}
-              {available.includes("TELEGRAM") && (
-                <Button variant="secondary" size="sm" onClick={() => { setAdding("TELEGRAM"); setValue(""); }}>
-                  <Send className="size-3.5" strokeWidth={1.5} /> Add Telegram
-                </Button>
-              )}
-              {available.length === 0 && (
-                <p className="text-sm text-faint">
-                  No delivery channels are configured on the server yet (set RESEND_API_KEY or
-                  TELEGRAM_BOT_TOKEN).
-                </p>
-              )}
-            </div>
-          )}
-        </>
-      )}
+            )}
+
+            {adding ? (
+              <form onSubmit={submitAdd} className="mt-4 flex flex-col gap-2">
+                <Input
+                  autoFocus
+                  type={adding === "EMAIL" ? "email" : "text"}
+                  placeholder={adding === "EMAIL" ? "you@company.com" : "Telegram chat id (e.g. 123456789)"}
+                  value={value}
+                  onChange={(e) => setValue(e.target.value)}
+                  required
+                  className="max-w-sm"
+                />
+                {adding === "TELEGRAM" && (
+                  <p className="max-w-lg text-xs text-faint">
+                    Start a chat with our bot, then message <span className="font-data">@userinfobot</span> to
+                    get your numeric chat id and paste it here.
+                  </p>
+                )}
+                <div className="flex gap-2">
+                  <Button type="submit" size="sm" loading={add.isPending}>
+                    {add.isPending ? "Adding…" : "Add channel"}
+                  </Button>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setAdding(null)}>
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {available.includes("EMAIL") && (
+                  <Button variant="secondary" size="sm" onClick={() => { setAdding("EMAIL"); setValue(""); }}>
+                    <Mail className="size-3.5" strokeWidth={1.5} /> Add email
+                  </Button>
+                )}
+                {available.includes("TELEGRAM") && (
+                  <Button variant="secondary" size="sm" onClick={() => { setAdding("TELEGRAM"); setValue(""); }}>
+                    <Send className="size-3.5" strokeWidth={1.5} /> Add Telegram
+                  </Button>
+                )}
+                {available.length === 0 && (
+                  <p className="text-sm text-faint">
+                    No delivery channels are configured on the server yet (set RESEND_API_KEY or
+                    TELEGRAM_BOT_TOKEN).
+                  </p>
+                )}
+              </div>
+            )}
+          </>
+        )}
+      </div>
 
       {notice && <p className="mt-4 text-xs text-muted">{notice}</p>}
     </section>
+  );
+}
+
+/* ── per-channel schedule editor ─────────────────────────────────────── */
+
+function ScheduleEditor({
+  channel,
+  saving,
+  onSave,
+  onCancel,
+}: {
+  channel: NotificationChannel;
+  saving: boolean;
+  onSave: (body: Record<string, unknown>) => void;
+  onCancel: () => void;
+}) {
+  const [frequency, setFrequency] = useState(channel.frequency);
+  const [deliveryTime, setDeliveryTime] = useState(channel.deliveryTime);
+  const [weeklyDay, setWeeklyDay] = useState(channel.weeklyDay ?? 1);
+  const [monthlyDay, setMonthlyDay] = useState(channel.monthlyDay ?? 1);
+  const [priorityThreshold, setPriorityThreshold] = useState(channel.priorityThreshold);
+  const [instantAlerts, setInstantAlerts] = useState(channel.instantAlerts);
+
+  const isDigest = frequency !== "INSTANT_ONLY";
+
+  return (
+    <div className="mt-4 grid grid-cols-1 gap-4 rounded-xl border border-border bg-surface-raised/40 p-5 sm:grid-cols-2">
+      <label className="flex flex-col gap-1.5">
+        <span className="microlabel">How often</span>
+        <select
+          className={selectClass}
+          value={frequency}
+          onChange={(e) => setFrequency(e.target.value as typeof frequency)}
+        >
+          {FREQUENCIES.map((f) => (
+            <option key={f.value} value={f.value}>{f.label}</option>
+          ))}
+        </select>
+      </label>
+
+      {isDigest && (
+        <label className="flex flex-col gap-1.5">
+          <span className="microlabel">Delivery time</span>
+          <Input
+            type="time"
+            value={deliveryTime}
+            onChange={(e) => setDeliveryTime(e.target.value)}
+            className="h-9 max-w-[10rem]"
+          />
+        </label>
+      )}
+
+      {frequency === "WEEKLY" && (
+        <label className="flex flex-col gap-1.5">
+          <span className="microlabel">Day of week</span>
+          <select className={selectClass} value={weeklyDay} onChange={(e) => setWeeklyDay(Number(e.target.value))}>
+            {[1, 2, 3, 4, 5, 6, 7].map((d) => (
+              <option key={d} value={d}>{DAY_NAMES[d]}</option>
+            ))}
+          </select>
+        </label>
+      )}
+
+      {frequency === "MONTHLY" && (
+        <label className="flex flex-col gap-1.5">
+          <span className="microlabel">Day of month</span>
+          <Input
+            type="number"
+            min={1}
+            max={28}
+            value={monthlyDay}
+            onChange={(e) => setMonthlyDay(Math.min(28, Math.max(1, Number(e.target.value) || 1)))}
+            className="h-9 max-w-[6rem]"
+          />
+        </label>
+      )}
+
+      <label className="flex flex-col gap-1.5">
+        <span className="microlabel">Only include</span>
+        <select
+          className={selectClass}
+          value={priorityThreshold}
+          onChange={(e) => setPriorityThreshold(e.target.value as typeof priorityThreshold)}
+        >
+          {SEVERITIES.map((s) => (
+            <option key={s.value} value={s.value}>{s.label}</option>
+          ))}
+        </select>
+      </label>
+
+      <label className="flex items-center gap-2.5 sm:col-span-2">
+        <input
+          type="checkbox"
+          checked={instantAlerts}
+          onChange={(e) => setInstantAlerts(e.target.checked)}
+          className="size-4 accent-[var(--color-accent,#7a3b1e)]"
+        />
+        <span className="text-sm text-foreground">
+          Also alert me instantly on important/critical signals (out of schedule)
+        </span>
+      </label>
+
+      <div className="flex gap-2 sm:col-span-2">
+        <Button
+          size="sm"
+          loading={saving}
+          onClick={() =>
+            onSave({
+              frequency,
+              deliveryTime,
+              weeklyDay,
+              monthlyDay,
+              priorityThreshold,
+              instantAlerts,
+            })
+          }
+        >
+          Save schedule
+        </Button>
+        <Button variant="ghost" size="sm" onClick={onCancel}>
+          Cancel
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/* ── per-user delivery preferences ───────────────────────────────────── */
+
+function DeliveryPreferences({ onNotice }: { onNotice: (m: string) => void }) {
+  const qc = useQueryClient();
+  const { data, isPending } = useQuery({
+    queryKey: SETTINGS_KEY,
+    queryFn: () => jsonFetch<{ settings: NotificationSettings }>("/api/notifications/settings"),
+  });
+
+  const save = useMutation({
+    mutationFn: (body: Record<string, unknown>) =>
+      jsonFetch("/api/notifications/settings", { method: "PATCH", body: JSON.stringify(body) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: SETTINGS_KEY });
+      onNotice("Delivery preferences saved.");
+    },
+    onError: (e) => onNotice((e as Error).message),
+  });
+
+  if (isPending || !data) return <Skeleton className="h-20" />;
+  const s = data.settings;
+
+  // Ensure the user's own timezone is selectable even if not in the common list.
+  const zones = COMMON_TZ.includes(s.timezone) ? COMMON_TZ : [s.timezone, ...COMMON_TZ];
+
+  return (
+    <div className="rounded-xl border border-border bg-surface p-5 shadow-[var(--shadow-soft)]">
+      <p className="microlabel mb-4">Delivery preferences</p>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <label className="flex flex-col gap-1.5">
+          <span className="microlabel">Your timezone</span>
+          <select
+            className={selectClass}
+            value={s.timezone}
+            onChange={(e) => save.mutate({ timezone: e.target.value })}
+          >
+            {zones.map((z) => (
+              <option key={z} value={z}>{z}</option>
+            ))}
+          </select>
+          <span className="text-xs text-faint">Delivery times are in this zone.</span>
+        </label>
+
+        <div className="flex flex-col gap-1.5">
+          <span className="microlabel">Quiet hours (mutes instant alerts)</span>
+          <div className="flex items-center gap-2">
+            <Input
+              type="time"
+              defaultValue={s.quietHoursStart ?? ""}
+              onBlur={(e) => save.mutate({ quietHoursStart: e.target.value || null })}
+              className="h-9 max-w-[8rem]"
+              aria-label="Quiet hours start"
+            />
+            <span className="text-sm text-faint">to</span>
+            <Input
+              type="time"
+              defaultValue={s.quietHoursEnd ?? ""}
+              onBlur={(e) => save.mutate({ quietHoursEnd: e.target.value || null })}
+              className="h-9 max-w-[8rem]"
+              aria-label="Quiet hours end"
+            />
+          </div>
+        </div>
+
+        <label className={cn("flex items-center gap-2.5 sm:col-span-2")}>
+          <input
+            type="checkbox"
+            checked={s.weekendPause}
+            onChange={(e) => save.mutate({ weekendPause: e.target.checked })}
+            className="size-4 accent-[var(--color-accent,#7a3b1e)]"
+          />
+          <span className="text-sm text-foreground">Pause all delivery on weekends</span>
+        </label>
+
+        <label className="flex items-center gap-2.5 sm:col-span-2">
+          <input
+            type="checkbox"
+            checked={s.criticalOverridesQuiet}
+            onChange={(e) => save.mutate({ criticalOverridesQuiet: e.target.checked })}
+            className="size-4 accent-[var(--color-accent,#7a3b1e)]"
+          />
+          <span className="text-sm text-foreground">
+            Let critical alerts break through quiet hours
+          </span>
+        </label>
+      </div>
+    </div>
   );
 }

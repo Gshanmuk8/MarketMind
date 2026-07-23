@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { inngest, Events } from "@/jobs/client";
 import type { SignalCategory, SignalSeverity } from "@prisma/client";
 
 /**
@@ -49,6 +50,14 @@ export async function recordSignal(signal: NewSignal) {
       raw: signal.raw as object | undefined,
     },
   });
+
+  // Instant alerts (doc 12): only urgent signals trigger an out-of-schedule
+  // push; best-effort so a queue hiccup never fails signal ingestion.
+  if (created.severity === "IMPORTANT" || created.severity === "CRITICAL") {
+    await inngest
+      .send({ name: Events.signalRecorded, data: { signalId: created.id } })
+      .catch(() => undefined);
+  }
 
   return created;
 }

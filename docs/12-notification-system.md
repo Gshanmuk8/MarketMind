@@ -1,6 +1,6 @@
 # 12 · Notification System
 
-Status: 🔨 shipping. **Report delivery ("Monday Morning Memo") is live**; the per-minute digest scheduler and instant alerts remain planned (see Roadmap below). Code: `features/notifications/`.
+Status: ✅ shipped. Report delivery ("Monday Morning Memo"), the **per-minute scheduled digest** (timezone + quiet hours), and **instant alerts** are all live. Code: `features/notifications/`, jobs `send-digests` + `instant-alerts`.
 
 ## Principles
 
@@ -34,8 +34,19 @@ Intelligence nobody opens is intelligence that doesn't exist — the memo is how
 
 Namespaced stable keys in `features/notifications/types.ts`: `competitor.*`, `tech.*`, `engineering.*`, `hiring.*`, `customer.*`, `pricing.*`. Monitors set `Signal.topic`; topic-less signals match via their category's group.
 
-## Roadmap (planned, not yet shipped)
+## Scheduled digests (shipped)
 
-- **`send-digests` cron (per-minute)** — timezone/`deliveryTime` scheduling via `Intl.DateTimeFormat` (never UTC-offset arithmetic), quiet hours for instant alerts, watermark advance only after successful delivery, empty digests skipped.
-- **`instant-alerts` on `signal/recorded`** — IMPORTANT/CRITICAL events delivered immediately to opted-in channels, respecting quiet hours (CRITICAL may pierce when opted in).
-- **Smart Digest (`digest.ts`)** — signals grouped by category with provenance marks and an AI strategic summary.
+`send-digests` cron runs **every minute** (`scheduling.ts` is pure/testable): find channels whose wall-clock `deliveryTime` is now in the user's timezone (`Intl.DateTimeFormat`, never UTC-offset math) for a matching cadence (DAILY / WEEKDAYS / WEEKLY+day / MONTHLY+day) → collect signals since `lastDigestAt` filtered by `priorityThreshold` + `topics` → `buildDigest()` (grouped by category, severity-first, provenance-marked) → adapter send → **advance the watermark only after a successful send** (empty case advances immediately so stale items can't flood a later digest). Vacation / snooze / weekend pauses apply to everything.
+
+## Instant alerts (shipped)
+
+`recordSignal` emits `signal/recorded` for IMPORTANT/CRITICAL signals; `instant-alerts` (idempotent per signal) delivers each to the owner's `instantAlerts` channels, respecting the channel threshold + topics and the user's quiet hours (CRITICAL may pierce when `criticalOverridesQuiet`).
+
+## Per-user preferences
+
+`GET/PATCH /api/notifications/settings` manages `NotificationSettings` (timezone, quiet hours, weekend pause, and — reserved — vacation/snooze). Per-channel schedule (cadence, time, day, minimum severity, instant-alerts toggle) is edited on each channel via `PATCH /api/notifications/[id]`.
+
+## Roadmap (later)
+
+- **Smart Digest AI summary** — an optional AI strategic summary line closing each digest (today's digest is the grouped, `whyItMatters`-annotated readout — no extra AI call).
+- Topic-subscription UI (the filter is enforced server-side; the picker isn't built yet).

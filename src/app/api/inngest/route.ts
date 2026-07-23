@@ -14,6 +14,8 @@ import { generateReportsJob } from "@/jobs/functions/generate-reports";
 import { decisionRevisitJob } from "@/jobs/functions/decision-revisit";
 import { generateCompetitorTimelineJob } from "@/jobs/functions/generate-competitor-timeline";
 import { refreshTimelinesJob } from "@/jobs/functions/refresh-timelines";
+import { sendDigestsJob } from "@/jobs/functions/send-digests";
+import { instantAlertsJob } from "@/jobs/functions/instant-alerts";
 
 /** Inngest serve endpoint — register every background function here. */
 export const { GET, POST, PUT } = serve({
@@ -26,5 +28,7 @@ export const { GET, POST, PUT } = serve({
     decisionRevisitJob,
     generateCompetitorTimelineJob,
     refreshTimelinesJob,
+    sendDigestsJob,
+    instantAlertsJob,
   ],
 });

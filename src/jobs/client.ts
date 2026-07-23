@@ -26,4 +26,5 @@ export const Events = {
   decisionRevisitRequested: "decision/revisit.requested",
   timelineGenerateRequested: "timeline/generate.requested",
   timelineRefreshRequested: "timeline/refresh.requested",
+  signalRecorded: "signal/recorded",
 } as const;

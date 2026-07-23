@@ -1,13 +1,16 @@
 import { db } from "@/lib/db";
-import type { NotificationChannel } from "@prisma/client";
+import type { NotificationChannel, NotificationSettings } from "@prisma/client";
 import { getAdapter } from "@/features/notifications/delivery";
 import { renderReportMessage } from "@/features/notifications/render";
+import { buildDigest, buildInstantAlert, SEVERITY_ORDER } from "@/features/notifications/digest";
+import { inQuietHours, isChannelDue, isPaused } from "@/features/notifications/scheduling";
 import {
   emailConfigSchema,
   telegramConfigSchema,
   type CreateChannelInput,
   type DeliveryMessage,
   type UpdateChannelInput,
+  type UpdateSettingsInput,
 } from "@/features/notifications/types";
 
 /**
@@ -73,6 +76,12 @@ export async function updateChannel(
       ...(input.enabled !== undefined ? { enabled: input.enabled } : {}),
       ...(input.config ? { config: input.config } : {}),
       ...(input.frequency ? { frequency: input.frequency } : {}),
+      ...(input.deliveryTime ? { deliveryTime: input.deliveryTime } : {}),
+      ...(input.weeklyDay !== undefined ? { weeklyDay: input.weeklyDay } : {}),
+      ...(input.monthlyDay !== undefined ? { monthlyDay: input.monthlyDay } : {}),
+      ...(input.priorityThreshold ? { priorityThreshold: input.priorityThreshold } : {}),
+      ...(input.topics ? { topics: input.topics } : {}),
+      ...(input.instantAlerts !== undefined ? { instantAlerts: input.instantAlerts } : {}),
     },
   });
 }
@@ -82,6 +91,25 @@ export async function deleteChannel(userId: string, channelId: string): Promise<
     where: { id: channelId, userId },
   });
   if (count === 0) throw new NotFoundError("Channel not found");
+}
+
+/* ── per-user delivery settings (timezone / quiet hours) ─────────────── */
+
+export async function getSettings(userId: string): Promise<NotificationSettings> {
+  const existing = await db.notificationSettings.findUnique({ where: { userId } });
+  if (existing) return existing;
+  return db.notificationSettings.create({ data: { userId } });
+}
+
+export async function updateSettings(
+  userId: string,
+  input: UpdateSettingsInput
+): Promise<NotificationSettings> {
+  return db.notificationSettings.upsert({
+    where: { userId },
+    create: { userId, ...input },
+    update: input,
+  });
 }
 
 /**
@@ -167,4 +195,118 @@ export async function sendTest(userId: string, channelId: string) {
     text: "This is a test from MarketMind AI. Your channel is connected and ready to receive your intelligence memos.",
   });
   return { ok };
+}
+
+/* ── scheduled digests + instant alerts (doc 12) ─────────────────────── */
+
+const DIGEST_SELECT = {
+  title: true,
+  category: true,
+  severity: true,
+  whyItMatters: true,
+  isInference: true,
+  sourceUrl: true,
+  topic: true,
+  competitor: { select: { name: true } },
+} as const;
+
+async function collectDigestSignals(
+  userId: string,
+  since: Date,
+  threshold: NotificationChannel["priorityThreshold"],
+  topics: string[]
+) {
+  const rows = await db.signal.findMany({
+    where: { company: { userId }, detectedAt: { gt: since } },
+    orderBy: { detectedAt: "desc" },
+    take: 100,
+    select: DIGEST_SELECT,
+  });
+  const min = SEVERITY_ORDER[threshold];
+  return rows.filter(
+    (s) =>
+      SEVERITY_ORDER[s.severity] >= min &&
+      (topics.length === 0 || (s.topic ? topics.includes(s.topic) : false))
+  );
+}
+
+/**
+ * Per-minute scheduler entry (doc 12). Delivers a digest to every channel
+ * whose wall-clock delivery time is now. The watermark (`lastDigestAt`)
+ * advances only after a successful send, so a failed send retries the same
+ * window; the empty case advances immediately so nothing floods later.
+ */
+export async function runDueDigests(at: Date = new Date()) {
+  const channels = await db.notificationChannel.findMany({
+    where: { enabled: true, frequency: { not: "INSTANT_ONLY" } },
+    include: { user: { include: { notificationSettings: true } } },
+  });
+
+  let sent = 0;
+  let due = 0;
+  for (const channel of channels) {
+    const settings = channel.user.notificationSettings;
+    if (isPaused(settings, at)) continue;
+    if (!isChannelDue(channel, settings, at)) continue;
+    due += 1;
+
+    const since = channel.lastDigestAt ?? new Date(at.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const signals = await collectDigestSignals(
+      channel.userId,
+      since,
+      channel.priorityThreshold,
+      channel.topics
+    );
+
+    if (signals.length === 0) {
+      await db.notificationChannel
+        .update({ where: { id: channel.id }, data: { lastDigestAt: at } })
+        .catch(() => undefined);
+      continue;
+    }
+
+    if (await sendToChannel(channel, buildDigest(signals))) {
+      sent += 1;
+      await db.notificationChannel
+        .update({ where: { id: channel.id }, data: { lastDigestAt: at } })
+        .catch(() => undefined);
+    }
+  }
+
+  return { checked: channels.length, due, sent };
+}
+
+/**
+ * Deliver an out-of-schedule instant alert for one IMPORTANT/CRITICAL
+ * signal to the owner's opted-in channels, honoring per-channel threshold,
+ * topics, and quiet hours (CRITICAL may pierce quiet hours when opted in).
+ */
+export async function deliverInstantAlert(signalId: string, at: Date = new Date()) {
+  const signal = await db.signal.findUnique({
+    where: { id: signalId },
+    select: { ...DIGEST_SELECT, company: { select: { userId: true } } },
+  });
+  if (!signal) return { skipped: true as const };
+  if (SEVERITY_ORDER[signal.severity] < SEVERITY_ORDER.IMPORTANT) {
+    return { skipped: true as const };
+  }
+
+  const channels = await db.notificationChannel.findMany({
+    where: { userId: signal.company.userId, enabled: true, instantAlerts: true },
+    include: { user: { include: { notificationSettings: true } } },
+  });
+
+  let sent = 0;
+  for (const channel of channels) {
+    const settings = channel.user.notificationSettings;
+    if (isPaused(settings, at)) continue;
+    if (SEVERITY_ORDER[signal.severity] < SEVERITY_ORDER[channel.priorityThreshold]) continue;
+    if (channel.topics.length && (!signal.topic || !channel.topics.includes(signal.topic))) continue;
+    const quiet = inQuietHours(settings, at);
+    if (quiet && !(signal.severity === "CRITICAL" && settings?.criticalOverridesQuiet)) continue;
+
+    if (await sendToChannel(channel, buildInstantAlert(signal))) sent += 1;
+  }
+
+  return { skipped: false as const, sent };
 }
