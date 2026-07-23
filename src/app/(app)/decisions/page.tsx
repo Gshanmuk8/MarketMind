@@ -13,9 +13,9 @@ export default function DecisionsPage() {
   return (
     <>
       <PageHeader
-        eyebrow="The ledger"
+        eyebrow="The war room"
         title="Decisions"
-        description="What you're considering, what you decided, and whether the market proved you right."
+        description="Open questions to settle, and the permanent record of what you decided, why, and how the market proved it out."
       />
       <DecisionWorkspace />
     </>

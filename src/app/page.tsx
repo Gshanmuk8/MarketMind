@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { LogoMark } from "@/components/layout/logo";
 import { SessionRedirect } from "@/features/auth/components/session-redirect";
 import { siteConfig } from "@/config/site";
 
@@ -49,7 +50,10 @@ export default async function LandingPage({
       {/* Folio line */}
       <header className="border-b border-border">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6 lg:px-10">
-          <span className="font-display text-lg tracking-tight">MarketMind</span>
+          <span className="flex items-center gap-2.5">
+            <LogoMark className="size-7" />
+            <span className="font-display text-lg tracking-tight">MarketMind</span>
+          </span>
           <div className="flex items-center gap-6">
             <p className="microlabel hidden sm:block">Private preview</p>
             <Link href="/login" className="text-sm text-muted transition-colors hover:text-foreground">

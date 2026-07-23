@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { mainNav, secondaryNav, type NavItem } from "@/config/navigation";
+import { Logo } from "@/components/layout/logo";
 import { cn } from "@/lib/utils";
 
 function IndexEntry({ item, index }: { item: NavItem; index: number }) {
@@ -48,11 +49,8 @@ function IndexEntry({ item, index }: { item: NavItem; index: number }) {
 export function IndexNav() {
   return (
     <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-border px-8 py-10 lg:flex">
-      <Link href="/dashboard" className="block">
-        <span className="font-display text-xl tracking-tight text-foreground">
-          MarketMind
-        </span>
-        <span className="microlabel mt-2 block">Competitive Intelligence</span>
+      <Link href="/dashboard" className="block transition-opacity hover:opacity-80">
+        <Logo />
       </Link>
 
       <nav aria-label="Primary" className="mt-14 flex flex-1 flex-col">

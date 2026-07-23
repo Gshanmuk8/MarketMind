@@ -3,29 +3,31 @@
 import { useState } from "react";
 import type { Decision } from "@prisma/client";
 import { CheckCircle2, RotateCcw, Trash2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import { useDeleteDecision, useUpdateDecision } from "../hooks/use-decisions";
 
-const STATUS_BADGE: Record<
-  Decision["status"],
-  { label: string; variant: "live" | "accent" | "warning" | "default" }
-> = {
-  CONSIDERING: { label: "Considering", variant: "live" },
-  DECIDED: { label: "Decided", variant: "accent" },
-  REVISIT: { label: "Revisit", variant: "warning" },
-  REVERSED: { label: "Reversed", variant: "default" },
+const STATUS: Record<Decision["status"], { label: string; color: string }> = {
+  CONSIDERING: { label: "Considering", color: "var(--color-live)" },
+  DECIDED: { label: "Decided", color: "var(--color-accent)" },
+  REVISIT: { label: "Revisit", color: "var(--color-warning)" },
+  REVERSED: { label: "Reversed", color: "var(--color-faint)" },
 };
 
-const OUTCOME_LABEL: Record<Decision["outcome"], string> = {
-  PENDING: "Outcome pending",
-  VALIDATED: "Validated",
-  MIXED: "Mixed",
-  REGRETTED: "Regretted",
+const OUTCOME: Record<Decision["outcome"], { label: string; className: string }> = {
+  PENDING: { label: "Outcome pending", className: "text-faint" },
+  VALIDATED: { label: "Validated", className: "text-accent" },
+  MIXED: { label: "Mixed", className: "text-warning" },
+  REGRETTED: { label: "Regretted", className: "text-critical" },
 };
 
+interface Alternative {
+  option: string;
+  reason?: string;
+}
+
+/** One decision, typeset as a permanent record: context → the call → outcome. */
 export function DecisionCard({ decision }: { decision: Decision }) {
   const update = useUpdateDecision();
   const remove = useDeleteDecision();
@@ -34,68 +36,99 @@ export function DecisionCard({ decision }: { decision: Decision }) {
   const [choice, setChoice] = useState("");
   const [rationale, setRationale] = useState("");
 
-  const status = STATUS_BADGE[decision.status];
+  const s = STATUS[decision.status];
   const evidenceCount = Array.isArray(decision.evidence) ? decision.evidence.length : 0;
+  const alternatives = Array.isArray(decision.alternatives)
+    ? (decision.alternatives as unknown as Alternative[])
+    : [];
+  const conviction = Math.min(1, evidenceCount / 4);
+  const stampDate = decision.decidedAt ?? decision.createdAt;
+  const dateLabel = stampDate
+    ? new Date(stampDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+    : "";
 
   function submitDecision(e: React.FormEvent) {
     e.preventDefault();
-    update.mutate(
-      { id: decision.id, status: "DECIDED", choice, rationale },
-      { onSuccess: () => setDeciding(false) }
-    );
+    update.mutate({ id: decision.id, status: "DECIDED", choice, rationale }, { onSuccess: () => setDeciding(false) });
   }
 
   return (
-    <Card>
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <h3 className="text-sm font-semibold">{decision.title}</h3>
-          <p className="mt-1 line-clamp-2 text-sm text-muted">{decision.context}</p>
+    <div className="rounded-xl border border-border bg-surface p-5 shadow-[var(--shadow-card)] transition-shadow duration-200 hover:shadow-[var(--shadow-lifted)]">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <span className="flex items-center gap-1.5">
+            <span aria-hidden className="size-2 rounded-full" style={{ backgroundColor: s.color }} />
+            <span className="font-data text-[11px] uppercase tracking-[0.15em]" style={{ color: s.color }}>
+              {s.label}
+            </span>
+          </span>
+          {dateLabel && <span className="font-data text-[11px] text-faint">{dateLabel}</span>}
         </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <Badge variant={status.variant}>{status.label}</Badge>
-          <Button
-            variant="ghost"
-            size="sm"
-            loading={remove.isPending}
-            onClick={() => remove.mutate(decision.id)}
-            aria-label="Delete decision"
-          >
-            <Trash2 className="size-4" />
-          </Button>
-        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          loading={remove.isPending}
+          onClick={() => remove.mutate(decision.id)}
+          aria-label="Delete decision"
+        >
+          <Trash2 className="size-4" />
+        </Button>
       </div>
 
-      {decision.choice && (
-        <div className="mt-3 rounded-md border border-border bg-surface-raised/50 p-3">
-          <p className="text-sm">
-            <span className="font-semibold text-accent">Decision:</span> {decision.choice}
-          </p>
-          {decision.rationale && (
-            <p className="mt-1 text-sm text-muted">
-              <span className="font-medium text-foreground">Why:</span> {decision.rationale}
-            </p>
+      <h3 className="mt-2.5 font-sans text-base font-medium leading-snug text-foreground">{decision.title}</h3>
+
+      {/* The record */}
+      <div className="mt-4 space-y-3 border-l-2 border-border pl-4">
+        <RecordRow label="Context" body={decision.context} />
+        {decision.choice && <RecordRow label="The call" body={decision.choice} strong />}
+        {decision.rationale && <RecordRow label="Why" body={decision.rationale} />}
+        {alternatives.length > 0 && (
+          <div>
+            <p className="microlabel mb-1.5">Rejected</p>
+            <ul className="space-y-1">
+              {alternatives.map((a, i) => (
+                <li key={i} className="text-sm leading-relaxed text-muted">
+                  <span className="text-faint">✕ </span>
+                  {a.option}
+                  {a.reason ? ` — ${a.reason}` : ""}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+
+      {/* Meters — conviction + outcome + revisit */}
+      {(decision.status !== "CONSIDERING" || evidenceCount > 0 || decision.revisitAt) && (
+        <div className="mt-4 flex flex-wrap items-end gap-x-10 gap-y-3">
+          <div>
+            <p className="microlabel mb-2">Conviction · {evidenceCount} evidence</p>
+            <ConvictionMeter value={conviction} />
+          </div>
+          {decision.status !== "CONSIDERING" && (
+            <div>
+              <p className="microlabel mb-2">Result</p>
+              <span className={cn("text-sm font-medium", OUTCOME[decision.outcome].className)}>
+                {OUTCOME[decision.outcome].label}
+              </span>
+              {decision.outcomeNotes && (
+                <p className="mt-0.5 max-w-sm text-xs leading-relaxed text-muted">{decision.outcomeNotes}</p>
+              )}
+            </div>
+          )}
+          {decision.revisitAt && (
+            <div>
+              <p className="microlabel mb-2">Revisit</p>
+              <span className="font-data text-sm text-foreground">
+                {new Date(decision.revisitAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+              </span>
+            </div>
           )}
         </div>
       )}
 
-      <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-faint">
-        {evidenceCount > 0 && <span>{evidenceCount} evidence items</span>}
-        {decision.decidedAt && (
-          <span className="font-data">
-            decided {new Date(decision.decidedAt).toLocaleDateString()}
-          </span>
-        )}
-        {decision.revisitAt && (
-          <span className="font-data">
-            revisit {new Date(decision.revisitAt).toLocaleDateString()}
-          </span>
-        )}
-        {decision.status !== "CONSIDERING" && <span>{OUTCOME_LABEL[decision.outcome]}</span>}
-      </div>
-
       {/* Founder-only transitions (doc 15: the AI never mutates decisions) */}
-      <div className="mt-4 flex flex-wrap items-center gap-2">
+      <div className="mt-5 flex flex-wrap items-center gap-2">
         {decision.status === "CONSIDERING" && !deciding && (
           <Button size="sm" onClick={() => setDeciding(true)}>
             <CheckCircle2 className="size-3.5" /> Decide
@@ -135,7 +168,6 @@ export function DecisionCard({ decision }: { decision: Decision }) {
         )}
         {decision.status === "REVISIT" && (
           <>
-            {/* A revisit can end either way — re-confirming must not be a dead end. */}
             <Button
               variant="secondary"
               size="sm"
@@ -156,7 +188,6 @@ export function DecisionCard({ decision }: { decision: Decision }) {
         )}
       </div>
 
-      {/* A silently failed transition reads as recorded — always surface it. */}
       {(update.isError || remove.isError) && (
         <p className="mt-2 text-xs text-critical">
           {((update.error ?? remove.error) as Error)?.message ?? "That didn't save — try again."}
@@ -164,7 +195,7 @@ export function DecisionCard({ decision }: { decision: Decision }) {
       )}
 
       {deciding && (
-        <form onSubmit={submitDecision} className="mt-3 flex flex-col gap-2">
+        <form onSubmit={submitDecision} className="mt-4 flex flex-col gap-2 border-t border-border pt-4">
           <Input
             autoFocus
             placeholder="What did you decide?"
@@ -187,6 +218,30 @@ export function DecisionCard({ decision }: { decision: Decision }) {
           </div>
         </form>
       )}
-    </Card>
+    </div>
+  );
+}
+
+function RecordRow({ label, body, strong }: { label: string; body: string; strong?: boolean }) {
+  return (
+    <div>
+      <p className="microlabel mb-1">{label}</p>
+      <p className={cn("text-sm leading-relaxed", strong ? "font-medium text-foreground" : "text-muted")}>{body}</p>
+    </div>
+  );
+}
+
+/** A 10-segment conviction bar (evidence-backed), War-Room style. */
+function ConvictionMeter({ value }: { value: number }) {
+  const filled = Math.round(value * 10);
+  return (
+    <div className="flex gap-0.5" aria-label={`${filled * 10}% conviction`}>
+      {Array.from({ length: 10 }).map((_, i) => (
+        <span
+          key={i}
+          className={cn("h-2.5 w-2.5 rounded-[2px]", i < filled ? "bg-accent" : "bg-border")}
+        />
+      ))}
+    </div>
   );
 }

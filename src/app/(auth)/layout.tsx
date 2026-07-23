@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/session";
+import { LogoMark } from "@/components/layout/logo";
 import { SessionRedirect } from "@/features/auth/components/session-redirect";
 
 /** Quiet, centered folio for login / signup screens. */
@@ -15,8 +16,9 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
     <main className="flex min-h-dvh flex-col items-center justify-center px-6">
       {/* Catches sessions minted client-side from confirmation-link tokens. */}
       <SessionRedirect to="/dashboard" />
-      <Link href="/" className="mb-12 text-center">
-        <span className="font-display text-2xl tracking-tight">MarketMind</span>
+      <Link href="/" className="mb-12 flex flex-col items-center">
+        <LogoMark className="size-9" />
+        <span className="font-display mt-3 text-2xl tracking-tight">MarketMind</span>
         <span className="microlabel mt-2 block">Competitive Intelligence</span>
       </Link>
 

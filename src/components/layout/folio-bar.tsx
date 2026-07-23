@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Search } from "lucide-react";
 import { mainNav, secondaryNav } from "@/config/navigation";
 import { useCurrentUser } from "@/features/auth/hooks/use-auth";
+import { LogoMark } from "@/components/layout/logo";
 import { cn } from "@/lib/utils";
 
 const allNav = [...mainNav, ...secondaryNav];
@@ -44,8 +45,9 @@ export function FolioBar() {
     <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur-md">
       <div className="flex h-14 items-center justify-between gap-3 px-4 sm:gap-6 sm:px-6 lg:px-10">
         <div className="flex items-baseline gap-4">
-          <Link href="/dashboard" className="font-display text-base text-foreground lg:hidden">
-            MarketMind
+          <Link href="/dashboard" className="flex items-center gap-2 lg:hidden">
+            <LogoMark className="size-6" />
+            <span className="font-display text-base text-foreground">MarketMind</span>
           </Link>
           <p className="microlabel hidden lg:block">{section?.title ?? "MarketMind"}</p>
           {today && <p aria-hidden className="microlabel hidden sm:block">{today}</p>}
