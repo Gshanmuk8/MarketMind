@@ -48,6 +48,19 @@ export async function POST(request: Request) {
     );
   }
 
+  // Best-effort kick of the Company Understanding Engine + discovery pipeline.
+  // A queue failure must not lose the company — analysis stays PENDING and the
+  // client sees `queued: false`, which lets onboarding re-submit to re-queue.
+  async function queueAnalysis(companyId: string) {
+    try {
+      await inngest.send({ name: Events.companyAnalyzeRequested, data: { companyId } });
+      return true;
+    } catch (error) {
+      console.error("[companies] failed to queue analysis:", error);
+      return false;
+    }
+  }
+
   let company;
   try {
     company = await db.company.create({
@@ -59,30 +72,20 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    // @@unique([userId, domain]) — the company was already added.
+    // @@unique([userId, domain]) — same company re-submitted. Treat it as an
+    // idempotent retry: re-queue analysis so a prior queue failure recovers,
+    // rather than dead-ending the user on "already tracking".
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      return NextResponse.json(
-        { error: "You're already tracking this company." },
-        { status: 409 }
-      );
+      const existingCompany = await db.company.findFirst({ where: { userId: user.id, domain } });
+      if (existingCompany) {
+        const queued = await queueAnalysis(existingCompany.id);
+        return NextResponse.json({ company: existingCompany, queued }, { status: 200 });
+      }
     }
     throw error;
   }
 
-  // Kick off the Company Understanding Engine + competitor discovery pipeline.
-  // A queue failure must not lose the created company — analysis stays
-  // PENDING and can be retried; the client sees `queued: false`.
-  let queued = true;
-  try {
-    await inngest.send({
-      name: Events.companyAnalyzeRequested,
-      data: { companyId: company.id },
-    });
-  } catch (error) {
-    queued = false;
-    console.error("[companies] failed to queue analysis:", error);
-  }
-
+  const queued = await queueAnalysis(company.id);
   return NextResponse.json({ company, queued }, { status: 201 });
 }
 

@@ -102,7 +102,6 @@ export function ReportList() {
                     {new Date(report.periodStart).toLocaleDateString("en-US", { month: "short", day: "numeric" })} —{" "}
                     {new Date(report.periodEnd).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                   </span>
-                  <Badge variant="inference" className="ml-auto">AI-reasoned</Badge>
                 </div>
                 <h3 className="font-display mt-3 text-xl leading-snug text-foreground">{report.title}</h3>
                 <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted">

@@ -72,9 +72,6 @@ export default async function DashboardPage() {
       <TerminalShell>
         <TerminalHeader label="The Briefing" subtitle={company.name ?? company.domain} />
 
-        {/* Question-driven intelligence — ask the system, don't navigate it */}
-        <MarketQuery />
-
         {analyzing && (
           <div className="flex items-center gap-3 border-b border-[var(--t-line)] bg-[var(--t-accent)]/[0.04] px-5 py-4 sm:px-7">
             <LiveDot />
@@ -87,8 +84,18 @@ export default async function DashboardPage() {
           </div>
         )}
         {company.analysisStatus === "FAILED" && (
-          <div className="border-b border-[var(--t-line)] px-5 py-4 text-sm text-[var(--t-critical)] sm:px-7">
-            Analysis could not complete. <RetryAnalysis companyId={company.id} />
+          <div className="border-b border-[var(--t-line)] px-5 py-4 sm:px-7">
+            <p className="text-sm text-[var(--t-critical)]">
+              Analysis could not complete — the site may be unreachable, blocking bots, or not a
+              company page.
+            </p>
+            <p className="mt-1.5 text-sm text-[var(--t-muted)]">
+              <RetryAnalysis companyId={company.id} />, or{" "}
+              <Link href="/settings" className="text-[var(--t-accent)] hover:underline">
+                change your website in Settings
+              </Link>
+              .
+            </p>
           </div>
         )}
         {classification &&
@@ -104,35 +111,14 @@ export default async function DashboardPage() {
             />
           )}
 
-        {/* Stat tiles */}
+        {/* Question-driven intelligence — ask the system, don't navigate it.
+            Sits below the status bands so it never invites questions before
+            there's anything to answer them with. */}
+        <MarketQuery />
+
+        {/* Stat tiles — ordered by what a founder acts on: the single most
+            dangerous competitor first, then coverage, then raw volume last. */}
         <section aria-label="Key figures" className="grid grid-cols-1 gap-px bg-[var(--t-line)] sm:grid-cols-3">
-          <div className="bg-[var(--t-bg)] px-5 py-6 sm:px-7">
-            <p className="font-data text-[10px] uppercase tracking-[0.2em] text-[var(--t-faint)]">
-              Signals · 24h
-            </p>
-            <p
-              className="font-data mt-3 text-5xl font-medium tabular-nums"
-              style={{ textShadow: "0 0 24px rgba(156,187,132,0.22)" }}
-            >
-              <CountUp value={signalsLastDay} />
-            </p>
-          </div>
-          <div className="bg-[var(--t-bg)] px-5 py-6 sm:px-7">
-            <p className="font-data text-[10px] uppercase tracking-[0.2em] text-[var(--t-faint)]">
-              Competitors tracked
-            </p>
-            <p className="font-data mt-3 text-5xl font-medium tabular-nums">
-              <CountUp value={trackedCount} />
-            </p>
-            {suggestedCount > 0 && (
-              <Link
-                href="/competitors"
-                className="font-data mt-2 inline-block text-[11px] text-[var(--t-accent)] hover:underline"
-              >
-                {suggestedCount} suggested — review →
-              </Link>
-            )}
-          </div>
           <div className="bg-[var(--t-bg)] px-5 py-6 sm:px-7">
             <p className="font-data text-[10px] uppercase tracking-[0.2em] text-[var(--t-faint)]">
               Highest threat
@@ -144,10 +130,11 @@ export default async function DashboardPage() {
                   style={{ textShadow: "0 0 24px rgba(208,183,104,0.28)" }}
                 >
                   <CountUp value={topThreat.threatScore ?? 0} />
+                  <span className="text-xl text-[var(--t-faint)]"> /100</span>
                 </p>
                 <Link
                   href={`/competitors/${topThreat.id}`}
-                  className="font-data mt-2 inline-block text-[11px] text-[var(--t-muted)] hover:text-[var(--t-text)] hover:underline"
+                  className="mt-2 inline-block text-sm text-[var(--t-text)] hover:text-[var(--t-gold)] hover:underline"
                 >
                   {topThreat.name} →
                 </Link>
@@ -155,6 +142,30 @@ export default async function DashboardPage() {
             ) : (
               <p className="mt-5 text-sm text-[var(--t-faint)]">Awaiting first assessment</p>
             )}
+          </div>
+          <div className="bg-[var(--t-bg)] px-5 py-6 sm:px-7">
+            <p className="font-data text-[10px] uppercase tracking-[0.2em] text-[var(--t-faint)]">
+              Competitors tracked
+            </p>
+            <p className="font-data mt-3 text-5xl font-medium tabular-nums">
+              <CountUp value={trackedCount} />
+            </p>
+            {suggestedCount > 0 && (
+              <Link
+                href="/competitors"
+                className="mt-2 inline-block text-sm text-[var(--t-accent)] hover:underline"
+              >
+                Review {suggestedCount} suggested →
+              </Link>
+            )}
+          </div>
+          <div className="bg-[var(--t-bg)] px-5 py-6 sm:px-7">
+            <p className="font-data text-[10px] uppercase tracking-[0.2em] text-[var(--t-faint)]">
+              Signals · 24h
+            </p>
+            <p className="font-data mt-3 text-5xl font-medium tabular-nums text-[var(--t-muted)]">
+              <CountUp value={signalsLastDay} />
+            </p>
           </div>
         </section>
 
@@ -178,7 +189,7 @@ export default async function DashboardPage() {
               )}
             </div>
             <span className="font-data text-[10px] uppercase tracking-wider text-[var(--t-pewter)]">
-              inferences labeled
+              AI inferences are labeled
             </span>
           </div>
 
@@ -191,7 +202,7 @@ export default async function DashboardPage() {
               <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-[var(--t-muted)]">
                 {trackedCount > 0
                   ? "Monitoring is active. Observations land here as your market moves — each with why it matters and what to do."
-                  : "Track competitors from the landscape page and monitoring begins automatically."}
+                  : "Track competitors from the Competitors page and monitoring begins automatically."}
               </p>
               {trackedCount === 0 && (
                 <Link

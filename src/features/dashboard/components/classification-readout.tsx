@@ -35,7 +35,7 @@ export function ClassificationReadout({
     <div className="border-b border-[var(--t-line)] bg-white/[0.02] px-5 py-4 sm:px-7">
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
         <p className="font-data text-[10px] uppercase tracking-[0.2em] text-[var(--t-pewter)]">
-          {competitive ? "Analysis" : "Classified"} · {label}
+          We read your site as · {label}
         </p>
         {pct != null && tier && (
           <div className="flex items-center gap-2.5">

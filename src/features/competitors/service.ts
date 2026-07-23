@@ -15,9 +15,10 @@ export type CompetitorListItem = Awaited<ReturnType<typeof listCompetitors>>[num
 export async function listCompetitors(userId: string) {
   return db.competitor.findMany({
     where: { company: { userId }, status: { not: "DISMISSED" } },
-    // Enum declaration order is SUGGESTED < TRACKING — asc puts the rows the
-    // founder still has to curate first, matching the "Track all" banner.
-    orderBy: [{ status: "asc" }, { threatScore: { sort: "desc", nulls: "last" } }, { similarityScore: "desc" }],
+    // Enum declaration order is SUGGESTED < TRACKING — desc leads with the
+    // rivals the founder actively TRACKS (curated signal), ranked by threat,
+    // and keeps unreviewed SUGGESTED rows as a distinct block beneath.
+    orderBy: [{ status: "desc" }, { threatScore: { sort: "desc", nulls: "last" } }, { similarityScore: "desc" }],
     include: { company: { select: { id: true, name: true } } },
   });
 }

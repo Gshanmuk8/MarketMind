@@ -68,7 +68,10 @@ export function DecisionCard({ decision }: { decision: Decision }) {
           variant="ghost"
           size="sm"
           loading={remove.isPending}
-          onClick={() => remove.mutate(decision.id)}
+          onClick={() => {
+            if (confirm("Delete this decision permanently? Your decision record can't be recovered."))
+              remove.mutate(decision.id);
+          }}
           aria-label="Delete decision"
         >
           <Trash2 className="size-4" />

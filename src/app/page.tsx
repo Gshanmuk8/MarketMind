@@ -55,9 +55,15 @@ export default async function LandingPage({
             <span className="font-display text-lg tracking-tight">MarketMind</span>
           </span>
           <div className="flex items-center gap-6">
-            <p className="microlabel hidden sm:block">Private preview</p>
+            <p className="microlabel hidden sm:block">Early access</p>
             <Link href="/login" className="text-sm text-muted transition-colors hover:text-foreground">
               Sign in
+            </Link>
+            <Link
+              href="/signup"
+              className="text-sm font-medium text-foreground transition-colors hover:text-accent"
+            >
+              Get started
             </Link>
           </div>
         </div>
@@ -72,8 +78,9 @@ export default async function LandingPage({
               Know your market before&nbsp;it&nbsp;moves.
             </h1>
             <p className="mt-8 max-w-md text-lg leading-relaxed text-muted">
-              {siteConfig.name} reads everything your market publishes and returns
-              one thing: what changed, why it matters, and what to do next.
+              {siteConfig.name} tracks your competitors and reads everything your
+              market publishes — then returns one thing: what changed, why it
+              matters, and what to do next.
             </p>
             <div className="mt-12 flex flex-wrap items-center gap-6">
               <Link
@@ -172,7 +179,7 @@ export default async function LandingPage({
             href="/signup"
             className="group inline-flex h-12 items-center gap-3 rounded-md border border-border-strong px-7 text-base font-medium transition-all duration-300 ease-[var(--ease-out-soft)] hover:-translate-y-px hover:bg-surface-raised hover:shadow-[var(--shadow-card)]"
           >
-            Begin the briefing
+            Analyze my company
             <ArrowRight
               className="size-4 transition-transform duration-300 ease-[var(--ease-out-soft)] group-hover:translate-x-1"
               strokeWidth={1.5}

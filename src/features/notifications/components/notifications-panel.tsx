@@ -92,7 +92,7 @@ export function NotificationsPanel() {
   const [adding, setAdding] = useState<ChannelType | null>(null);
   const [value, setValue] = useState("");
   const [editing, setEditing] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{ text: string; tone: "ok" | "error" } | null>(null);
 
   const channelsQ = useQuery({
     queryKey: CHANNELS_KEY,
@@ -106,23 +106,23 @@ export function NotificationsPanel() {
     onSuccess: () => {
       setAdding(null);
       setValue("");
-      setNotice("Channel added. Set its schedule, then send a test.");
+      setNotice({ text: "Channel added. Set its schedule, then send a test.", tone: "ok" });
       invalidate();
     },
-    onError: (e) => setNotice((e as Error).message),
+    onError: (e) => setNotice({ text: (e as Error).message, tone: "error" }),
   });
 
   const toggle = useMutation({
     mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) =>
       jsonFetch(`/api/notifications/${id}`, { method: "PATCH", body: JSON.stringify({ enabled }) }),
     onSuccess: invalidate,
-    onError: (e) => setNotice((e as Error).message),
+    onError: (e) => setNotice({ text: (e as Error).message, tone: "error" }),
   });
 
   const remove = useMutation({
     mutationFn: (id: string) => jsonFetch(`/api/notifications/${id}`, { method: "DELETE" }),
     onSuccess: invalidate,
-    onError: (e) => setNotice((e as Error).message),
+    onError: (e) => setNotice({ text: (e as Error).message, tone: "error" }),
   });
 
   const test = useMutation({
@@ -131,8 +131,8 @@ export function NotificationsPanel() {
         method: "PATCH",
         body: JSON.stringify({ action: "test" }),
       }),
-    onSuccess: () => setNotice("Test sent — check your inbox / Telegram."),
-    onError: (e) => setNotice((e as Error).message),
+    onSuccess: () => setNotice({ text: "Test sent — check your inbox / Telegram.", tone: "ok" }),
+    onError: (e) => setNotice({ text: (e as Error).message, tone: "error" }),
   });
 
   const saveSchedule = useMutation({
@@ -140,10 +140,10 @@ export function NotificationsPanel() {
       jsonFetch(`/api/notifications/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
     onSuccess: () => {
       setEditing(null);
-      setNotice("Schedule saved.");
+      setNotice({ text: "Schedule saved.", tone: "ok" });
       invalidate();
     },
-    onError: (e) => setNotice((e as Error).message),
+    onError: (e) => setNotice({ text: (e as Error).message, tone: "error" }),
   });
 
   function submitAdd(e: React.FormEvent) {
@@ -225,7 +225,10 @@ export function NotificationsPanel() {
                           variant="ghost"
                           size="sm"
                           loading={remove.isPending && remove.variables === channel.id}
-                          onClick={() => remove.mutate(channel.id)}
+                          onClick={() => {
+                            if (confirm("Remove this delivery channel? You'll stop receiving briefings here."))
+                              remove.mutate(channel.id);
+                          }}
                           aria-label="Remove channel"
                         >
                           <Trash2 className="size-4" strokeWidth={1.5} />
@@ -296,7 +299,14 @@ export function NotificationsPanel() {
         )}
       </div>
 
-      {notice && <p className="mt-4 text-xs text-muted">{notice}</p>}
+      {notice && (
+        <p
+          role="status"
+          className={`mt-4 text-xs ${notice.tone === "error" ? "text-critical" : "text-accent"}`}
+        >
+          {notice.text}
+        </p>
+      )}
     </section>
   );
 }
@@ -413,7 +423,7 @@ function ScheduleEditor({
 
 /* ── per-user delivery preferences (optimistic — instant) ────────────── */
 
-function DeliveryPreferences({ onNotice }: { onNotice: (m: string) => void }) {
+function DeliveryPreferences({ onNotice }: { onNotice: (n: { text: string; tone: "ok" | "error" }) => void }) {
   const qc = useQueryClient();
   const { data, isPending } = useQuery({
     queryKey: SETTINGS_KEY,
@@ -436,7 +446,7 @@ function DeliveryPreferences({ onNotice }: { onNotice: (m: string) => void }) {
     },
     onError: (e, _patch, ctx) => {
       if (ctx?.prev) qc.setQueryData(SETTINGS_KEY, ctx.prev);
-      onNotice((e as Error).message);
+      onNotice({ text: (e as Error).message, tone: "error" });
     },
     onSettled: () => qc.invalidateQueries({ queryKey: SETTINGS_KEY }),
   });

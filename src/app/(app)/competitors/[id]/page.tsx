@@ -98,11 +98,6 @@ export default async function CompetitorProfilePage({
           >
             {competitor.status === "TRACKING" ? "● Tracking" : competitor.status.toLowerCase()}
           </span>
-          {competitor.similarityScore != null && (
-            <span className="font-data text-[10px] uppercase tracking-[0.18em] text-[var(--t-muted)]">
-              {Math.round(competitor.similarityScore * 100)}% similar to you
-            </span>
-          )}
         </div>
         {competitor.description && (
           <p className="mt-3 max-w-3xl text-sm leading-relaxed text-[var(--t-muted)]">
@@ -111,7 +106,9 @@ export default async function CompetitorProfilePage({
         )}
       </div>
 
-      {/* Metric strip — only the metrics we actually have (no empty cells) */}
+      {/* Metric strip — only the metrics we actually have (no empty cells).
+          Threat and Similarity are the two primary competitive dimensions
+          (how dangerous × how close), so both lead as full figures. */}
       <section className="flex flex-wrap border-b border-[var(--t-line)]">
         <div className="min-w-[150px] flex-1 px-5 py-6 sm:px-7">
           <p className="font-data text-[10px] uppercase tracking-[0.2em] text-[var(--t-faint)]">Threat</p>
@@ -120,6 +117,7 @@ export default async function CompetitorProfilePage({
             style={{ textShadow: "0 0 22px rgba(208,183,104,0.28)" }}
           >
             {threat != null ? <CountUp value={threat} /> : "—"}
+            {threat != null && <span className="text-lg text-[var(--t-faint)]"> /100</span>}
           </p>
           {threatDelta != null && threatDelta !== 0 && (
             <p className="font-data mt-1 text-[11px] text-[var(--t-muted)]">
@@ -141,6 +139,18 @@ export default async function CompetitorProfilePage({
             </div>
           )}
         </div>
+        {competitor.similarityScore != null && (
+          <div className="min-w-[150px] flex-1 border-l border-[var(--t-line)] px-5 py-6 sm:px-7">
+            <p className="font-data text-[10px] uppercase tracking-[0.2em] text-[var(--t-faint)]">
+              Similarity
+            </p>
+            <p className="font-data mt-2 text-4xl font-medium tabular-nums text-[var(--t-live)]">
+              {Math.round(competitor.similarityScore * 100)}
+              <span className="text-lg text-[var(--t-faint)]">%</span>
+            </p>
+            <p className="mt-1 text-[11px] text-[var(--t-muted)]">how close to your market</p>
+          </div>
+        )}
         {opportunity != null && (
           <div className="min-w-[150px] flex-1 border-l border-[var(--t-line)] px-5 py-6 sm:px-7">
             <p className="font-data text-[10px] uppercase tracking-[0.2em] text-[var(--t-faint)]">
@@ -260,14 +270,14 @@ export default async function CompetitorProfilePage({
                   <li key={factor}>
                     <div className="flex items-baseline justify-between">
                       <span className="text-xs text-[var(--t-muted)]">{humanize(factor)}</span>
-                      <span className="font-data text-xs text-[var(--t-faint)]">{value}</span>
+                      <span className="font-data text-xs font-medium text-[var(--t-text)]">{value}</span>
                     </div>
-                    <div aria-hidden className="mt-1.5 h-px w-full bg-[var(--t-line)]">
+                    <div aria-hidden className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[var(--t-line)]">
                       <div
-                        className="h-px bg-[var(--t-gold)]"
+                        className="h-full rounded-full bg-[var(--t-gold)]"
                         style={{
                           width: `${factorMax ? Math.round((value / factorMax) * 100) : 0}%`,
-                          boxShadow: "0 0 6px var(--t-gold)",
+                          boxShadow: "0 0 8px color-mix(in oklab, var(--t-gold), transparent 40%)",
                         }}
                       />
                     </div>

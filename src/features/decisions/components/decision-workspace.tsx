@@ -87,8 +87,10 @@ export function DecisionWorkspace() {
             variant="secondary"
             size="sm"
             onClick={() => setCreating(true)}
-            disabled={!company}
-            title={company ? undefined : "Add your company first (onboarding)"}
+            // Only gate once the companies query has actually resolved — a
+            // loading state must not masquerade as "no company yet".
+            disabled={companiesData != null && !company}
+            title={companiesData != null && !company ? "Add your company first (onboarding)" : undefined}
           >
             <Plus className="size-3.5" /> New question
           </Button>

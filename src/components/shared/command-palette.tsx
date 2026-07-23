@@ -94,7 +94,7 @@ export function CommandPalette() {
     if (open) setRecents(getRecents());
   }, [open]);
 
-  const { data, isFetching } = useQuery({
+  const { data, isFetching, isError } = useQuery({
     queryKey: ["search", query],
     queryFn: async (): Promise<SearchResults> => {
       const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
@@ -150,6 +150,12 @@ export function CommandPalette() {
           </div>
 
           <Command.List className="max-h-[60vh] overflow-y-auto p-2">
+            {/* A failed search must not read as "no matches" */}
+            {isError && typing && (
+              <p className="px-3 py-2 text-sm text-critical">
+                Search is unavailable right now — try again in a moment.
+              </p>
+            )}
             {/* Ask row — any typed text becomes a grounded question */}
             {typing && (
               <Command.Group heading="Ask" className={groupClass}>

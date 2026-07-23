@@ -13,11 +13,17 @@ async function createCompany(url: string) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ url }),
   });
+  const data = await res.json().catch(() => null);
   if (!res.ok) {
-    const data = await res.json().catch(() => null);
     throw new Error(data?.error ?? "Something went wrong. Please try again.");
   }
-  return res.json();
+  // The company saved, but analysis never reached the queue — surface it as an
+  // error (keeping the user on the form) instead of routing to a dashboard that
+  // promises a self-updating page it can't deliver. Re-submitting re-queues.
+  if (data?.queued === false) {
+    throw new Error("We saved your company but couldn't start the analysis. Please try again.");
+  }
+  return data;
 }
 
 /** The single-input company onboarding form. */

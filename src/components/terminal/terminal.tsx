@@ -33,6 +33,13 @@ export const SEV: Record<SignalSeverity, string> = {
   INFO: "var(--t-faint)",
 };
 
+export const SEV_LABEL: Record<SignalSeverity, string> = {
+  CRITICAL: "Critical",
+  IMPORTANT: "Important",
+  NOTABLE: "Notable",
+  INFO: "Info",
+};
+
 export const stamp = (d: Date) =>
   `${d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" }).toUpperCase()} · ${d.toLocaleTimeString(
     "en-GB",
@@ -114,8 +121,21 @@ export function TerminalSignalRow({
 }: {
   signal: Signal & { competitor?: { name: string | null } | null };
 }) {
+  // Urgency must be legible at a glance, not decoded from a 9px dot: the two
+  // urgent tiers earn a coloured left rail, a tinted ground (CRITICAL), and a
+  // spelled-out label so triage is instant.
+  const urgent = signal.severity === "CRITICAL" || signal.severity === "IMPORTANT";
   return (
-    <li className="border-t border-[var(--t-line)] px-5 py-4 transition-colors hover:bg-white/[0.025] sm:px-7">
+    <li
+      className="border-t border-[var(--t-line)] px-5 py-4 transition-colors hover:bg-white/[0.025] sm:px-7"
+      style={{
+        borderLeft: `2px solid ${urgent ? SEV[signal.severity] : "transparent"}`,
+        backgroundColor:
+          signal.severity === "CRITICAL"
+            ? "color-mix(in oklab, var(--t-critical), transparent 93%)"
+            : undefined,
+      }}
+    >
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
         <span className="font-data text-[11px] tracking-wide text-[var(--t-faint)]">
           {stamp(signal.detectedAt)}
@@ -131,6 +151,14 @@ export function TerminalSignalRow({
         >
           ●
         </span>
+        {urgent && (
+          <span
+            className="font-data text-[10px] font-semibold uppercase tracking-[0.16em]"
+            style={{ color: SEV[signal.severity] }}
+          >
+            {SEV_LABEL[signal.severity]}
+          </span>
+        )}
         <span className="font-data text-[10px] uppercase tracking-[0.15em] text-[var(--t-muted)]">
           {signal.category.toLowerCase().replace(/_/g, " ")}
         </span>
