@@ -24,4 +24,6 @@ export const Events = {
   ecosystemSweepRequested: "ecosystem/sweep.requested",
   reportGenerate: "report/generate",
   decisionRevisitRequested: "decision/revisit.requested",
+  timelineGenerateRequested: "timeline/generate.requested",
+  timelineRefreshRequested: "timeline/refresh.requested",
 } as const;

@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { SignalEntry } from "@/components/shared/signal-entry";
 import { getSessionUser } from "@/lib/session";
 import { getCompetitor } from "@/features/competitors/service";
+import { ActivityTimeline } from "@/features/competitor-timeline/components/activity-timeline";
 import type { InsightType, ImpactLevel } from "@prisma/client";
 
 export const metadata: Metadata = { title: "Competitor profile" };
@@ -134,7 +135,12 @@ export default async function CompetitorProfilePage({
         </section>
       )}
 
-      <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-16">
+      {/* Additive: Competitor Activity Timeline + adoption intelligence (doc 10).
+          Lazy-loaded, cached, self-refreshing — the existing sections below
+          (strategic assessment, developments, tech, scoring) are unchanged. */}
+      <ActivityTimeline competitorId={id} />
+
+      <div className="mt-16 grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-16">
         {/* Annotation column — the numbers, read as information design */}
         <aside className="lg:col-span-4">
           {competitor.description && (

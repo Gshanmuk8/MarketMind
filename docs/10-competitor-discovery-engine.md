@@ -30,3 +30,12 @@ All stages run inside the `analyze-company` Inngest function (durable, step-retr
 
 - Confidence is honest: no invented companies; discovery output is inference until corroborated.
 - Discovery must never block onboarding: failures mark `analysisStatus: FAILED` with a retry affordance.
+
+## Competitor Activity Timeline (additive, dossier)
+
+A per-competitor **activity timeline** + **adoption/usage intelligence** surfaced on the dossier (`/competitors/[id]`), strictly additive — the existing analysis, signals, insights, tech, and scoring are untouched.
+
+- **Content**: four rolling windows — **last 24h / 7d / 30d / 365d** — each a short narrative + itemized activity across product, pricing, marketing, sales, funding, partnerships, hiring, engineering, community, etc. Plus an **adoption** block (use cases, popular features, industries, sentiment, community themes, pain points, requested features). It is an **AI inference** (labeled as such); items grounded in our collected `Signal` stream are marked `observed`, the rest are public-knowledge inference. The factual signal stream stays in the existing "Recent developments" section.
+- **Generation**: `features/competitor-timeline/service.ts` → `generateTimeline(competitorId)` — one `ai.complete({ task: "summarization" })` grounded in the company profile + the competitor's real bucketed signals. Cached in `Competitor.profile.timeline` (`{ data, generatedAt, model }`) — **no schema migration** (profile is JSON). A freshness guard (<20h) makes regeneration idempotent.
+- **Auto-refresh (rolling)**: daily cron `refresh-timelines` enqueues `timeline/generate.requested` for TRACKING competitors whose cache is stale (>24h), so every window stays current without a visit. Opening a dossier lazily enqueues generation too if the cache is missing/stale.
+- **Delivery**: thin `GET /api/competitors/[id]/timeline` returns the cache (ownership-scoped) and enqueues a refresh when stale; the client lazy-loads after the dossier opens, shows a loading state, polls until fresh, and degrades gracefully when data is unavailable.
