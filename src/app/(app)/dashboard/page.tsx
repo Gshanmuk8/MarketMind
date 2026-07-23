@@ -1,164 +1,20 @@
 import type { Metadata } from "next";
-import type { CSSProperties } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import type { Signal, SignalSeverity } from "@prisma/client";
 import { LiveRefresh } from "@/components/shared/live-refresh";
+import { TerminalShell, TerminalHeader, LiveDot, TerminalSignalRow } from "@/components/terminal/terminal";
 import { getSessionUser } from "@/lib/session";
 import { getBriefing } from "@/features/dashboard/service";
 import { countSignalsSince } from "@/features/signals/service";
 import { RetryAnalysis } from "@/features/dashboard/components/retry-analysis";
 import { MarkSeen } from "@/features/dashboard/components/mark-seen";
-import { TerminalClock } from "@/features/dashboard/components/terminal-clock";
 import { LAST_SEEN_COOKIE } from "@/features/dashboard/constants";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
 // The briefing must reflect the market as of this request, never a cached page.
 export const dynamic = "force-dynamic";
-
-/* ── Intelligence Terminal theme (self-contained; brand accents on ink) ── */
-const TERMINAL: CSSProperties = {
-  "--t-bg": "#131209",
-  "--t-panel": "#1b1a11",
-  "--t-line": "#302d20",
-  "--t-text": "#eae6d8",
-  "--t-muted": "#a29d8b",
-  "--t-faint": "#6f6b59",
-  "--t-accent": "#9cbb84", // sage, brightened for ink
-  "--t-live": "#79aabd", // mineral
-  "--t-gold": "#d0b768", // score
-  "--t-critical": "#dd6f66", // brick
-  "--t-pewter": "#a6abb4", // AI inference
-} as CSSProperties;
-
-const SEV: Record<SignalSeverity, string> = {
-  CRITICAL: "var(--t-critical)",
-  IMPORTANT: "var(--t-gold)",
-  NOTABLE: "var(--t-accent)",
-  INFO: "var(--t-faint)",
-};
-
-const stamp = (d: Date) =>
-  `${d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" }).toUpperCase()} · ${d.toLocaleTimeString(
-    "en-GB",
-    { hour: "2-digit", minute: "2-digit" }
-  )}`;
-
-function LiveDot() {
-  return (
-    <span className="relative flex size-2">
-      <span className="absolute inline-flex size-full animate-ping rounded-full bg-[var(--t-accent)] opacity-60" />
-      <span
-        className="relative inline-flex size-2 rounded-full bg-[var(--t-accent)]"
-        style={{ boxShadow: "0 0 8px var(--t-accent)" }}
-      />
-    </span>
-  );
-}
-
-function TerminalHeader({ subtitle }: { subtitle: string }) {
-  return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-[var(--t-line)] px-5 py-4 sm:px-7">
-      <LiveDot />
-      <span className="font-data text-[11px] uppercase tracking-[0.28em] text-[var(--t-accent)]">Live</span>
-      <span className="font-data text-[11px] uppercase tracking-[0.28em] text-[var(--t-muted)]">
-        The Briefing
-      </span>
-      <span aria-hidden className="text-[var(--t-faint)]">
-        /
-      </span>
-      <span className="truncate text-sm text-[var(--t-text)]">{subtitle}</span>
-      <span className="ml-auto text-[var(--t-faint)]">
-        <TerminalClock />
-      </span>
-    </div>
-  );
-}
-
-function TerminalShell({ children }: { children: React.ReactNode }) {
-  return (
-    <div
-      style={TERMINAL}
-      className="rise relative overflow-hidden rounded-3xl border border-[var(--t-line)] bg-[var(--t-bg)] text-[var(--t-text)] shadow-[0_40px_90px_-50px_rgba(0,0,0,0.7)]"
-    >
-      {/* whisper of scanline / dot-grid texture */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.035]"
-        style={{
-          backgroundImage: "radial-gradient(circle at 1px 1px, #fff 1px, transparent 0)",
-          backgroundSize: "22px 22px",
-        }}
-      />
-      {/* top accent bloom */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-40"
-        style={{
-          background:
-            "radial-gradient(60% 100% at 15% 0%, rgba(156,187,132,0.10), transparent 70%)",
-        }}
-      />
-      <div className="relative">{children}</div>
-    </div>
-  );
-}
-
-function SignalRow({ signal }: { signal: Signal & { competitor?: { name: string | null } | null } }) {
-  return (
-    <li className="border-t border-[var(--t-line)] px-5 py-4 transition-colors hover:bg-white/[0.025] sm:px-7">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-        <span className="font-data text-[11px] tracking-wide text-[var(--t-faint)]">
-          {stamp(signal.detectedAt)}
-        </span>
-        <span
-          aria-hidden
-          className="text-[9px]"
-          style={{ color: SEV[signal.severity], textShadow: `0 0 8px ${SEV[signal.severity]}` }}
-        >
-          ●
-        </span>
-        <span className="font-data text-[10px] uppercase tracking-[0.15em] text-[var(--t-muted)]">
-          {signal.category.toLowerCase().replace(/_/g, " ")}
-        </span>
-        {signal.competitor?.name && (
-          <span className="text-xs text-[var(--t-live)]">{signal.competitor.name}</span>
-        )}
-        {signal.isInference && (
-          <span className="ml-auto font-data text-[10px] uppercase tracking-widest text-[var(--t-pewter)]">
-            AI{signal.confidence != null ? ` ${Math.round(signal.confidence * 100)}%` : ""}
-          </span>
-        )}
-      </div>
-
-      <h3 className="mt-2 text-sm font-medium leading-snug text-[var(--t-text)]">{signal.title}</h3>
-      {signal.whyItMatters && (
-        <p className="mt-1.5 text-sm leading-relaxed text-[var(--t-muted)]">
-          <span className="text-[var(--t-faint)]">▸ </span>
-          {signal.whyItMatters}
-        </p>
-      )}
-      {signal.recommendation && (
-        <p className="mt-1 text-sm leading-relaxed text-[var(--t-accent)]">
-          <span className="opacity-70">→ </span>
-          {signal.recommendation}
-        </p>
-      )}
-      {signal.sourceUrl && (
-        <a
-          href={signal.sourceUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="font-data mt-2 inline-block text-[11px] text-[var(--t-live)] hover:underline"
-        >
-          {signal.sourceName ?? "source"} ↗
-        </a>
-      )}
-    </li>
-  );
-}
 
 export default async function DashboardPage() {
   const user = await getSessionUser();
@@ -169,7 +25,7 @@ export default async function DashboardPage() {
   if (!briefing.company) {
     return (
       <TerminalShell>
-        <TerminalHeader subtitle="awaiting first company" />
+        <TerminalHeader label="The Briefing" subtitle="awaiting first company" />
         <div className="px-6 py-20 text-center sm:py-28">
           <p className="font-data text-[11px] uppercase tracking-[0.28em] text-[var(--t-faint)]">
             First edition pending
@@ -208,7 +64,7 @@ export default async function DashboardPage() {
       <LiveRefresh />
       <MarkSeen />
       <TerminalShell>
-        <TerminalHeader subtitle={company.name ?? company.domain} />
+        <TerminalHeader label="The Briefing" subtitle={company.name ?? company.domain} />
 
         {analyzing && (
           <div className="flex items-center gap-3 border-b border-[var(--t-line)] bg-[var(--t-accent)]/[0.04] px-5 py-4 sm:px-7">
@@ -323,7 +179,7 @@ export default async function DashboardPage() {
           ) : (
             <ol>
               {signals.map((signal) => (
-                <SignalRow key={signal.id} signal={signal} />
+                <TerminalSignalRow key={signal.id} signal={signal} />
               ))}
             </ol>
           )}

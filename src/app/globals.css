@@ -1,14 +1,15 @@
 @import "tailwindcss";
 
 /* ────────────────────────────────────────────────────────────────────
-   MarketMind AI — "Vellum" Design Tokens
+   MarketMind AI — "Vellum" Design Tokens (light editorial base)
    A light museum-editorial system: porcelain & limestone, graphite ink,
-   botanical & mineral accents, architectural whitespace. Light-only, no
-   glass. Premium comes first from composition, typography, spacing, and
-   colour — now with layered depth (soft shadows, a whisper of mineral
-   gradient) and restrained, purposeful motion (fade-up, hover elevation,
-   loading shimmer). Palette unchanged; the marks are just better used.
-   (Owner direction, 2026-07 — premium polish over the Vellum base.)
+   botanical & mineral accents, architectural whitespace. Layered depth
+   (soft shadows, a whisper of mineral gradient) and restrained, purposeful
+   motion (fade-up, hover elevation, shimmer). This is the base theme for
+   the "reading" surfaces (landing, auth, settings, decisions, reports).
+   The live "command" surfaces (dashboard, competitor dossier) opt into a
+   self-contained dark "Intelligence Terminal" treatment on top of the same
+   accent marks — a two-room system, one brand. (Owner direction, 2026-07.)
    ──────────────────────────────────────────────────────────────────── */
 
 @theme {
