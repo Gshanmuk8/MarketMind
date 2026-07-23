@@ -78,7 +78,7 @@ export function DecisionCard({ decision }: { decision: Decision }) {
         </Button>
       </div>
 
-      <h3 className="mt-2.5 font-sans text-base font-medium leading-snug text-foreground">{decision.title}</h3>
+      <h3 className="mt-3 font-display text-xl leading-snug text-foreground">{decision.title}</h3>
 
       {/* The record */}
       <div className="mt-4 space-y-3 border-l-2 border-border pl-4">

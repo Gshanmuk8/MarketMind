@@ -33,7 +33,7 @@ export function SettingsView() {
   const qc = useQueryClient();
   const { signOut } = useAuth();
   const { data: user } = useCurrentUser();
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{ text: string; tone: "ok" | "error" } | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newUrl, setNewUrl] = useState("");
 
@@ -46,10 +46,10 @@ export function SettingsView() {
     mutationFn: (id: string) =>
       jsonFetch(`/api/companies/${id}`, { method: "PATCH", body: JSON.stringify({ action: "reanalyze" }) }),
     onSuccess: () => {
-      setNotice("Re-analysis queued — the dashboard fills in as it completes.");
+      setNotice({ text: "Re-analysis queued — the dashboard fills in as it completes.", tone: "ok" });
       qc.invalidateQueries({ queryKey: ["companies"] });
     },
-    onError: (e) => setNotice((e as Error).message),
+    onError: (e) => setNotice({ text: (e as Error).message, tone: "error" }),
   });
 
   const changeUrl = useMutation({
@@ -58,16 +58,16 @@ export function SettingsView() {
     onSuccess: () => {
       setEditingId(null);
       setNewUrl("");
-      setNotice("Website changed — a fresh analysis of the new market is running now.");
+      setNotice({ text: "Website changed — a fresh analysis of the new market is running now.", tone: "ok" });
       qc.invalidateQueries({ queryKey: ["companies"] });
     },
-    onError: (e) => setNotice((e as Error).message),
+    onError: (e) => setNotice({ text: (e as Error).message, tone: "error" }),
   });
 
   const removeCompany = useMutation({
     mutationFn: (id: string) => jsonFetch(`/api/companies/${id}`, { method: "DELETE" }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["companies"] }),
-    onError: (e) => setNotice((e as Error).message),
+    onError: (e) => setNotice({ text: (e as Error).message, tone: "error" }),
   });
 
   async function handleSignOut() {
@@ -83,7 +83,10 @@ export function SettingsView() {
     <div className="rise flex max-w-2xl flex-col gap-14">
       {/* Account */}
       <section>
-        <p className="microlabel mb-4">Account</p>
+        <div className="mb-5">
+          <p className="microlabel">Account</p>
+          <p className="mt-2 text-sm text-muted">Your identity on MarketMind.</p>
+        </div>
         <div className="border-t border-border">
           <div className="flex items-baseline justify-between border-b border-border py-4">
             <span className="text-sm text-muted">Name</span>
@@ -101,7 +104,12 @@ export function SettingsView() {
 
       {/* Company */}
       <section>
-        <p className="microlabel mb-4">Company profile</p>
+        <div className="mb-5">
+          <p className="microlabel">Company profile</p>
+          <p className="mt-2 text-sm text-muted">
+            The company every competitor, signal, and report is built around.
+          </p>
+        </div>
         {isPending ? (
           <Skeleton className="h-24" />
         ) : isError ? (
@@ -148,6 +156,7 @@ export function SettingsView() {
                       placeholder="newwebsite.com"
                       value={newUrl}
                       onChange={(e) => setNewUrl(e.target.value)}
+                      invalid={changeUrl.isError}
                       required
                       className="max-w-xs"
                     />
@@ -195,7 +204,14 @@ export function SettingsView() {
             ))}
           </div>
         )}
-        {notice && <p className="mt-4 text-xs text-muted">{notice}</p>}
+        {notice && (
+          <p
+            role="status"
+            className={`mt-4 text-xs ${notice.tone === "error" ? "text-critical" : "text-accent"}`}
+          >
+            {notice.text}
+          </p>
+        )}
       </section>
     </div>
   );

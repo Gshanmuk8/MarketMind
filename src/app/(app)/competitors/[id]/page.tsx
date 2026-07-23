@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { TerminalShell, TerminalHeader, TerminalSignalRow, stamp } from "@/components/terminal/terminal";
+import { TerminalShell, TerminalHeader, TerminalSignalRow, SEV, SEV_LABEL, stamp } from "@/components/terminal/terminal";
 import { CountUp } from "@/components/ui/count-up";
 import { Sparkline, trendGlyph } from "@/components/ui/sparkline";
 import { getSessionUser } from "@/lib/session";
@@ -70,6 +70,12 @@ export default async function CompetitorProfilePage({
 
   const lead = competitor.insights[0] ?? null;
   const restInsights = lead ? competitor.insights.slice(1) : competitor.insights;
+
+  // Narrative flow: the newest signal is hoisted to a featured "Latest
+  // movement" band (what changed) between the metrics and the assessment;
+  // the rest form the evidence record at the foot of the file.
+  const latest = competitor.signals[0] ?? null;
+  const earlier = competitor.signals.slice(1);
 
   const techByCategory = new Map<string, string[]>();
   for (const t of competitor.techEntries) {
@@ -173,6 +179,72 @@ export default async function CompetitorProfilePage({
           </div>
         ))}
       </section>
+
+      {/* Latest movement — what changed, hoisted so the reader meets the most
+          recent signal before the deeper assessment and history. */}
+      {latest && (
+        <section className="px-5 py-7 sm:px-7">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <p className="font-data text-[11px] uppercase tracking-[0.22em] text-[var(--t-muted)]">
+              Latest movement
+            </p>
+            <span className="font-data text-[11px] tracking-wide text-[var(--t-faint)]">
+              {stamp(latest.detectedAt)}
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <span
+              aria-hidden
+              className="text-[10px]"
+              style={{
+                color: SEV[latest.severity],
+                textShadow: latest.severity === "INFO" ? undefined : `0 0 7px ${SEV[latest.severity]}`,
+              }}
+            >
+              ●
+            </span>
+            <span
+              className="font-data text-[10px] font-semibold uppercase tracking-[0.16em]"
+              style={{ color: SEV[latest.severity] }}
+            >
+              {SEV_LABEL[latest.severity]}
+            </span>
+            <span className="font-data text-[10px] uppercase tracking-[0.15em] text-[var(--t-faint)]">
+              {latest.category.toLowerCase().replace(/_/g, " ")}
+            </span>
+            {latest.isInference && (
+              <span className="ml-auto font-data text-[10px] uppercase tracking-widest text-[var(--t-pewter)]">
+                AI{latest.confidence != null ? ` ${Math.round(latest.confidence * 100)}%` : ""}
+              </span>
+            )}
+          </div>
+          <h2 className="font-display mt-3 max-w-3xl text-2xl leading-snug text-[var(--t-text)]">
+            {latest.title}
+          </h2>
+          {latest.whyItMatters && (
+            <p className="mt-3 max-w-3xl text-[15px] leading-relaxed text-[var(--t-muted)]">
+              <span className="text-[var(--t-faint)]">▸ </span>
+              {latest.whyItMatters}
+            </p>
+          )}
+          {latest.recommendation && (
+            <p className="mt-2 max-w-3xl text-[15px] leading-relaxed text-[var(--t-accent)]">
+              <span className="opacity-70">→ </span>
+              {latest.recommendation}
+            </p>
+          )}
+          {latest.sourceUrl && (
+            <a
+              href={latest.sourceUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="font-data mt-3 inline-block text-[11px] text-[var(--t-live)] hover:underline"
+            >
+              {latest.sourceName ?? "source"} ↗
+            </a>
+          )}
+        </section>
+      )}
 
       {/* Lead assessment standfirst */}
       {lead && (
@@ -288,27 +360,29 @@ export default async function CompetitorProfilePage({
           )}
         </section>
 
-        {/* Development record */}
+        {/* Development record — the evidence trail beneath the latest movement */}
         <section className="bg-[var(--t-bg)]">
           <div className="flex items-center justify-between px-5 py-4 sm:px-7">
             <p className="font-data text-[11px] uppercase tracking-[0.22em] text-[var(--t-muted)]">
-              Recent developments
+              Earlier developments
             </p>
-            {competitor.signals[0] && (
+            {earlier[0] && (
               <span className="font-data text-[11px] text-[var(--t-faint)]">
-                {stamp(competitor.signals[0].detectedAt).split(" · ")[0]}
+                {stamp(earlier[0].detectedAt).split(" · ")[0]}
               </span>
             )}
           </div>
-          {competitor.signals.length === 0 ? (
+          {earlier.length === 0 ? (
             <p className="border-t border-[var(--t-line)] px-5 py-8 text-sm leading-relaxed text-[var(--t-muted)] sm:px-7">
-              {competitor.status === "TRACKING"
-                ? "Monitoring is active — observations will appear here as the market moves, newest first."
-                : "Track this competitor to begin monitoring its public footprint."}
+              {competitor.signals.length > 0
+                ? "The latest movement above is the only recorded activity so far."
+                : competitor.status === "TRACKING"
+                  ? "Monitoring is active — observations will appear here as the market moves, newest first."
+                  : "Track this competitor to begin monitoring its public footprint."}
             </p>
           ) : (
             <ol>
-              {competitor.signals.map((signal) => (
+              {earlier.map((signal) => (
                 <TerminalSignalRow key={signal.id} signal={signal} />
               ))}
             </ol>

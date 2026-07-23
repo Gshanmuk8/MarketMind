@@ -396,11 +396,13 @@ function ScheduleEditor({
         </Select>
       </label>
 
-      <div className="flex items-center gap-3 sm:col-span-2">
-        <Toggle checked={instantAlerts} onChange={setInstantAlerts} label="Instant alerts" />
-        <span className="text-sm text-foreground">
-          Also alert me instantly on important/critical signals (out of schedule)
-        </span>
+      <div className="sm:col-span-2">
+        <Toggle
+          checked={instantAlerts}
+          onChange={setInstantAlerts}
+          label="Instant alerts"
+          description="Also alert me instantly on important/critical signals (out of schedule)"
+        />
       </div>
 
       <div className="flex gap-2 sm:col-span-2">
@@ -532,21 +534,21 @@ function DeliveryPreferences({ onNotice }: { onNotice: (n: { text: string; tone:
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface-raised/40 px-4 py-3 sm:col-span-2">
-          <span className="text-sm text-foreground">Pause all delivery on weekends</span>
+        <div className="rounded-lg border border-border bg-surface-raised/40 px-4 py-3 sm:col-span-2">
           <Toggle
             checked={s.weekendPause}
             onChange={(v) => save.mutate({ weekendPause: v })}
             label="Pause on weekends"
+            description="Pause all delivery on weekends"
           />
         </div>
 
-        <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface-raised/40 px-4 py-3 sm:col-span-2">
-          <span className="text-sm text-foreground">Let critical alerts break through quiet hours</span>
+        <div className="rounded-lg border border-border bg-surface-raised/40 px-4 py-3 sm:col-span-2">
           <Toggle
             checked={s.criticalOverridesQuiet}
             onChange={(v) => save.mutate({ criticalOverridesQuiet: v })}
             label="Critical overrides quiet hours"
+            description="Let critical alerts break through quiet hours"
           />
         </div>
       </div>

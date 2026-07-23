@@ -58,6 +58,7 @@ export function OnboardingForm() {
           aria-label="Your company website"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
+          invalid={mutation.isError}
           autoFocus
           required
         />

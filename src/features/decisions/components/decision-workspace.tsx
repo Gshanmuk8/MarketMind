@@ -146,14 +146,24 @@ export function DecisionWorkspace() {
       {/* Decision record — the timeline of what was decided and how it played out */}
       {record.length > 0 && (
         <section>
-          <div className="mb-6 flex items-baseline gap-3 border-b border-border pb-3">
-            <h2 className="microlabel">Decision record</h2>
-            <span className="font-data text-xs text-faint">{record.length} on the books</span>
+          <div className="mb-6 border-b border-border pb-3">
+            <div className="flex items-baseline gap-3">
+              <h2 className="microlabel">Decision record</h2>
+              <span className="font-data text-xs text-faint">{record.length} on the books</span>
+            </div>
+            <p className="mt-2 text-sm text-muted">What you decided, why, and how it played out.</p>
           </div>
 
           <div className="relative">
-            {/* the rail */}
-            <span aria-hidden className="absolute bottom-3 left-[6px] top-3 w-px bg-border" />
+            {/* the rail — a hairline that fades into the margins at both ends */}
+            <span
+              aria-hidden
+              className="absolute bottom-3 left-[6px] top-3 w-px"
+              style={{
+                background:
+                  "linear-gradient(to bottom, transparent, var(--color-border) 7%, var(--color-border) 93%, transparent)",
+              }}
+            />
             <div className="flex flex-col gap-6">
               {record.map((d) => (
                 <div key={d.id} className="grid grid-cols-[14px_1fr] gap-5">
@@ -161,7 +171,10 @@ export function DecisionWorkspace() {
                     <span
                       aria-hidden
                       className="mt-5 size-3.5 rounded-full border-2 bg-background"
-                      style={{ borderColor: NODE_COLOR[d.status] }}
+                      style={{
+                        borderColor: NODE_COLOR[d.status],
+                        boxShadow: `0 0 0 4px color-mix(in oklab, ${NODE_COLOR[d.status]}, transparent 90%)`,
+                      }}
                     />
                   </div>
                   <DecisionCard decision={d} />
