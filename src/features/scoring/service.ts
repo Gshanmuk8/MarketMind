@@ -41,3 +41,20 @@ export function computeThreatScore(factors: ThreatFactors): {
   }
   return { score: Math.round(score), breakdown };
 }
+
+/**
+ * Opportunity (0–100) — how much room the competitor's weaknesses leave for
+ * the founder. High when their customers are unhappy, their innovation is
+ * slow, or their marketing/tech is weak (gaps to exploit), tempered by the
+ * addressable audience their traffic and category growth imply.
+ */
+export function computeOpportunityScore(factors: ThreatFactors): number {
+  const value =
+    (100 - factors.customerSatisfaction) * 0.3 +
+    (100 - factors.featureVelocity) * 0.22 +
+    (100 - factors.marketing) * 0.16 +
+    (100 - factors.technology) * 0.12 +
+    factors.traffic * 0.1 +
+    factors.growth * 0.1;
+  return Math.round(Math.min(100, Math.max(0, value)));
+}

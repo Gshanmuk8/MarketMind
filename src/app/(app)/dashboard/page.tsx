@@ -5,10 +5,11 @@ import { cookies } from "next/headers";
 import { LiveRefresh } from "@/components/shared/live-refresh";
 import { TerminalShell, TerminalHeader, LiveDot, TerminalSignalRow } from "@/components/terminal/terminal";
 import { getSessionUser } from "@/lib/session";
-import { getBriefing } from "@/features/dashboard/service";
+import { getBriefing, getSignalMomentum } from "@/features/dashboard/service";
 import { countSignalsSince } from "@/features/signals/service";
 import { RetryAnalysis } from "@/features/dashboard/components/retry-analysis";
 import { MarkSeen } from "@/features/dashboard/components/mark-seen";
+import { SignalMomentum } from "@/features/dashboard/components/signal-momentum";
 import { LAST_SEEN_COOKIE } from "@/features/dashboard/constants";
 
 export const metadata: Metadata = { title: "Dashboard" };
@@ -58,6 +59,8 @@ export default async function DashboardPage() {
     lastSeen && !Number.isNaN(lastSeen.getTime())
       ? await countSignalsSince(user.id, lastSeen)
       : 0;
+
+  const momentum = await getSignalMomentum(user.id, 30);
 
   return (
     <>
@@ -134,6 +137,9 @@ export default async function DashboardPage() {
             )}
           </div>
         </section>
+
+        {/* Signature viz */}
+        <SignalMomentum data={momentum} />
 
         {/* Feed */}
         <section aria-label="Latest intelligence">

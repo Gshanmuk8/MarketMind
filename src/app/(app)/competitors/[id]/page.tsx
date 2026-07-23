@@ -107,9 +107,9 @@ export default async function CompetitorProfilePage({
         )}
       </div>
 
-      {/* Metric strip: threat / opportunity + facts */}
-      <section className="grid grid-cols-2 gap-px bg-[var(--t-line)] sm:grid-cols-4">
-        <div className="bg-[var(--t-bg)] px-5 py-6 sm:px-7">
+      {/* Metric strip — only the metrics we actually have (no empty cells) */}
+      <section className="flex flex-wrap border-b border-[var(--t-line)]">
+        <div className="min-w-[150px] flex-1 px-5 py-6 sm:px-7">
           <p className="font-data text-[10px] uppercase tracking-[0.2em] text-[var(--t-faint)]">Threat</p>
           <p
             className="font-data mt-2 text-4xl font-medium tabular-nums text-[var(--t-gold)]"
@@ -124,16 +124,21 @@ export default async function CompetitorProfilePage({
             </p>
           )}
         </div>
-        <div className="bg-[var(--t-bg)] px-5 py-6 sm:px-7">
-          <p className="font-data text-[10px] uppercase tracking-[0.2em] text-[var(--t-faint)]">
-            Opportunity
-          </p>
-          <p className="font-data mt-2 text-4xl font-medium tabular-nums text-[var(--t-accent)]">
-            {opportunity ?? "—"}
-          </p>
-        </div>
-        {facts.slice(0, 2).map((f) => (
-          <div key={f.label} className="bg-[var(--t-bg)] px-5 py-6 sm:px-7">
+        {opportunity != null && (
+          <div className="min-w-[150px] flex-1 border-l border-[var(--t-line)] px-5 py-6 sm:px-7">
+            <p className="font-data text-[10px] uppercase tracking-[0.2em] text-[var(--t-faint)]">
+              Opportunity
+            </p>
+            <p className="font-data mt-2 text-4xl font-medium tabular-nums text-[var(--t-accent)]">
+              {opportunity}
+            </p>
+          </div>
+        )}
+        {facts.map((f) => (
+          <div
+            key={f.label}
+            className="min-w-[150px] flex-1 border-l border-[var(--t-line)] px-5 py-6 sm:px-7"
+          >
             <p className="font-data text-[10px] uppercase tracking-[0.2em] text-[var(--t-faint)]">
               {f.label}
             </p>

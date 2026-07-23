@@ -5,7 +5,11 @@ import { parseAiJson } from "@/lib/ai/json";
 import { fetchCompanyPage } from "@/features/company-analysis/service";
 import { enrichSignal } from "@/features/signals/intelligence";
 import { recordSignal } from "@/features/signals/service";
-import { computeThreatScore, type ThreatFactors } from "@/features/scoring/service";
+import {
+  computeOpportunityScore,
+  computeThreatScore,
+  type ThreatFactors,
+} from "@/features/scoring/service";
 import type { SignalCategory } from "@prisma/client";
 
 /**
@@ -267,10 +271,12 @@ export async function assessBaselineThreats(companyId: string) {
 
   await db.$transaction(
     competitors.flatMap((competitor) => {
-      const { score, breakdown } = computeThreatScore(toFactors(byId.get(competitor.id)));
+      const factors = toFactors(byId.get(competitor.id));
+      const { score, breakdown } = computeThreatScore(factors);
+      const opportunityScore = computeOpportunityScore(factors);
       return [
         db.scoreSnapshot.create({
-          data: { competitorId: competitor.id, threatScore: score, breakdown },
+          data: { competitorId: competitor.id, threatScore: score, opportunityScore, breakdown },
         }),
         db.competitor.update({
           where: { id: competitor.id },
@@ -336,10 +342,11 @@ export async function assessCompetitorThreat(competitorId: string) {
   const factors = toFactors(raw);
 
   const { score, breakdown } = computeThreatScore(factors);
+  const opportunityScore = computeOpportunityScore(factors);
 
   await db.$transaction([
     db.scoreSnapshot.create({
-      data: { competitorId: competitor.id, threatScore: score, breakdown },
+      data: { competitorId: competitor.id, threatScore: score, opportunityScore, breakdown },
     }),
     db.competitor.update({
       where: { id: competitor.id },
