@@ -1,10 +1,10 @@
 import { serve } from "inngest/next";
 
-// AI steps (analysis, enrichment, reports) exceed serverless defaults —
-// allow the platform maximum so jobs never die mid-step. A single step can
-// bundle a page fetch + several enrichment calls; 60s killed those mid-step
-// (and each provider attempt alone may take up to 90s before falling back).
-export const maxDuration = 300;
+// AI steps (analysis, enrichment, reports) exceed serverless defaults — take
+// the platform maximum so jobs don't die mid-step. Held at 60 (Vercel Hobby
+// ceiling); each step.run is its own invocation, so this is per-step budget.
+// Raise to 300 only on a plan that permits it, or the build will fail.
+export const maxDuration = 60;
 
 import { inngest } from "@/jobs/client";
 import { analyzeCompanyJob } from "@/jobs/functions/analyze-company";
