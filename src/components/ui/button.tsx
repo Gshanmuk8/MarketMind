@@ -10,15 +10,17 @@ import { Spinner } from "@/components/ui/spinner";
  * disables itself.
  */
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 font-medium transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-45",
+  "inline-flex items-center justify-center gap-2 rounded-md font-medium tracking-[0.005em] transition-all duration-200 ease-out outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background active:translate-y-0 disabled:pointer-events-none disabled:opacity-45",
   {
     variants: {
       variant: {
-        primary: "bg-ink-wash text-background hover:bg-foreground",
+        primary:
+          "bg-ink-wash text-background shadow-[var(--shadow-card)] hover:bg-foreground hover:-translate-y-px hover:shadow-[var(--shadow-lifted)]",
         secondary:
-          "border border-border-strong bg-transparent text-foreground hover:bg-surface-raised",
+          "border border-border-strong bg-transparent text-foreground hover:-translate-y-px hover:bg-surface-raised hover:shadow-[var(--shadow-card)]",
         ghost: "text-muted hover:bg-surface-raised hover:text-foreground",
-        danger: "border border-critical/40 bg-transparent text-critical hover:bg-critical/10",
+        danger:
+          "border border-critical/40 bg-transparent text-critical hover:bg-critical/10 hover:border-critical/60",
       },
       size: {
         sm: "h-8 px-4 text-sm",

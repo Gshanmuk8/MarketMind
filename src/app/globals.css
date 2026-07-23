@@ -3,10 +3,12 @@
 /* ────────────────────────────────────────────────────────────────────
    MarketMind AI — "Vellum" Design Tokens
    A light museum-editorial system: porcelain & limestone, graphite ink,
-   botanical & mineral accents, architectural whitespace. No dark, no
-   gradients, no glass, no glow, no motion. Premium comes from
-   composition, typography, spacing, and colour alone.
-   (Owner pivot, 2026-07-06 — supersedes Atelier and the Opaline experiment.)
+   botanical & mineral accents, architectural whitespace. Light-only, no
+   glass. Premium comes first from composition, typography, spacing, and
+   colour — now with layered depth (soft shadows, a whisper of mineral
+   gradient) and restrained, purposeful motion (fade-up, hover elevation,
+   loading shimmer). Palette unchanged; the marks are just better used.
+   (Owner direction, 2026-07 — premium polish over the Vellum base.)
    ──────────────────────────────────────────────────────────────────── */
 
 @theme {
@@ -46,8 +48,11 @@
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
 
-  /* Shadow — nearly invisible, overlays only */
+  /* Shadow — layered soft depth. Whisper-quiet at rest, richer on lift. */
   --shadow-soft: 0 1px 2px rgb(35 35 31 / 0.04), 0 12px 32px -16px rgb(35 35 31 / 0.14);
+  --shadow-card: 0 1px 1px rgb(35 35 31 / 0.04), 0 1px 3px rgb(35 35 31 / 0.05);
+  --shadow-lifted: 0 2px 6px rgb(35 35 31 / 0.05), 0 20px 44px -22px rgb(35 35 31 / 0.22);
+  --shadow-float: 0 10px 30px -10px rgb(35 35 31 / 0.16), 0 30px 70px -34px rgb(35 35 31 / 0.3);
 }
 
 /* ── Base ──────────────────────────────────────────────────────────── */
@@ -57,6 +62,12 @@ html {
 
 body {
   background-color: var(--color-background);
+  /* A whisper of warm mineral depth — palette-consistent, never a flood. */
+  background-image:
+    radial-gradient(1100px 560px at 12% -8%, color-mix(in oklab, var(--color-accent), transparent 93%), transparent 62%),
+    radial-gradient(900px 480px at 100% -6%, color-mix(in oklab, var(--color-score), transparent 94%), transparent 58%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
   color: var(--color-foreground);
   font-family: var(--font-sans);
   font-feature-settings: "cv11", "ss01";
@@ -102,20 +113,53 @@ h4 {
 }
 
 /*
- * No motion is a design decision here (owner direction): premium comes
- * from composition, not animation. `.rise` and its stagger classes are
- * kept as harmless no-ops so existing markup renders instantly and
- * legibly rather than starting hidden.
+ * Purposeful motion (owner direction, 2026-07): a restrained fade-up as
+ * content settles, and hover elevation on interactive surfaces. Refined,
+ * never distracting. Reduced-motion users get the end state instantly
+ * (see the media query below), so nothing ever stays hidden.
  */
-.rise,
-.rise-1,
-.rise-2,
-.rise-3,
-.rise-4,
-.rise-5 {
-  animation: none;
-  opacity: 1;
-  transform: none;
+.rise {
+  animation: riseIn 0.55s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+.rise-1 { animation-delay: 0.05s; }
+.rise-2 { animation-delay: 0.1s; }
+.rise-3 { animation-delay: 0.16s; }
+.rise-4 { animation-delay: 0.22s; }
+.rise-5 { animation-delay: 0.28s; }
+
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Premium loading shimmer — a light sweep across skeleton placeholders. */
+.shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklab, #ffffff, transparent 35%),
+    transparent
+  );
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 /* Honour reduced-motion for any incidental transitions */

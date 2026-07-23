@@ -1,9 +1,10 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Loading placeholder — a still limestone block. No pulse, no shimmer:
- * the composition holds the space calmly until content sets.
+ * Loading placeholder — a limestone block with a soft light sweep, so the
+ * composition reads as actively loading rather than broken, and settles
+ * gracefully into content. Stills itself under prefers-reduced-motion.
  */
 export function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("rounded-sm bg-border/60", className)} {...props} />;
+  return <div className={cn("shimmer rounded-md bg-border/50", className)} {...props} />;
 }

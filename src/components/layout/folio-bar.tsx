@@ -41,7 +41,7 @@ export function FolioBar() {
     "·";
 
   return (
-    <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur-sm">
+    <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur-md">
       <div className="flex h-14 items-center justify-between gap-3 px-4 sm:gap-6 sm:px-6 lg:px-10">
         <div className="flex items-baseline gap-4">
           <Link href="/dashboard" className="font-display text-base text-foreground lg:hidden">
@@ -53,7 +53,7 @@ export function FolioBar() {
 
         <div className="flex items-center gap-2">
           <button
-            className="flex h-8 items-center gap-2 rounded-md border border-border bg-surface px-3 text-xs text-faint transition-colors hover:border-border-strong hover:text-muted"
+            className="flex h-8 items-center gap-2 rounded-lg border border-border bg-surface px-3 text-xs text-faint shadow-[var(--shadow-card)] transition-all duration-200 hover:-translate-y-px hover:border-border-strong hover:text-muted hover:shadow-[var(--shadow-lifted)]"
             aria-label="Open global search"
             onClick={() => window.dispatchEvent(new Event("mm:open-search"))}
           >

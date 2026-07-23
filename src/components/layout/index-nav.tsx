@@ -14,21 +14,29 @@ function IndexEntry({ item, index }: { item: NavItem; index: number }) {
       href={item.href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "group flex items-baseline gap-4 py-2 transition-colors duration-200",
-        active ? "text-foreground" : "text-muted hover:text-foreground"
+        "group relative -mx-3 flex items-baseline gap-4 rounded-lg px-3 py-2 transition-all duration-200 ease-out",
+        active
+          ? "bg-accent-dim text-foreground"
+          : "text-muted hover:bg-surface-raised hover:text-foreground"
       )}
     >
+      {/* Accent rail on the active entry — a quiet Linear-style marker */}
+      {active && (
+        <span
+          aria-hidden
+          className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-full bg-accent"
+        />
+      )}
       <span
         aria-hidden
         className={cn(
-          "font-data text-[11px] tracking-wide",
+          "font-data text-[11px] tracking-wide transition-colors",
           active ? "text-accent" : "text-faint group-hover:text-muted"
         )}
       >
         {String(index).padStart(2, "0")}
       </span>
       <span className="text-sm">{item.title}</span>
-      {active && <span aria-hidden className="ml-auto size-1.5 self-center bg-accent" />}
     </Link>
   );
 }
