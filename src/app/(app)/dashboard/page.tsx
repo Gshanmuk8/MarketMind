@@ -13,6 +13,7 @@ import { MarkSeen } from "@/features/dashboard/components/mark-seen";
 import { SignalMomentum } from "@/features/dashboard/components/signal-momentum";
 import { MarketQuery } from "@/features/dashboard/components/market-query";
 import { ClassificationReadout } from "@/features/dashboard/components/classification-readout";
+import { TopThreatBrief } from "@/features/dashboard/components/top-threat-brief";
 import { LAST_SEEN_COOKIE } from "@/features/dashboard/constants";
 
 export const metadata: Metadata = { title: "Dashboard" };
@@ -52,7 +53,7 @@ export default async function DashboardPage() {
     );
   }
 
-  const { company, classification, signalsLastDay, trackedCount, suggestedCount, topThreat, signals } = briefing;
+  const { company, classification, signalsLastDay, trackedCount, suggestedCount, topThreat, topThreatBrief, signals } = briefing;
   const analyzing = company.analysisStatus === "PENDING" || company.analysisStatus === "ANALYZING";
 
   // "New since your last visit" — from the per-device cookie MarkSeen stamps.
@@ -168,6 +169,9 @@ export default async function DashboardPage() {
             </p>
           </div>
         </section>
+
+        {/* Top-threat brief — why #1, what they're doing, how to compete */}
+        {topThreatBrief && <TopThreatBrief brief={topThreatBrief} />}
 
         {/* Signature viz */}
         <SignalMomentum data={momentum} />

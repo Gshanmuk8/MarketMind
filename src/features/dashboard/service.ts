@@ -48,7 +48,7 @@ export async function getBriefing(userId: string) {
   });
 
   if (!company) {
-    return { company: null, classification: null, signalsLastDay: 0, trackedCount: 0, suggestedCount: 0, topThreat: null, signals: [] as Awaited<ReturnType<typeof listRecentSignals>> };
+    return { company: null, classification: null, signalsLastDay: 0, trackedCount: 0, suggestedCount: 0, topThreat: null, topThreatBrief: null, signals: [] as Awaited<ReturnType<typeof listRecentSignals>> };
   }
 
   const classification = readClassification(company.analysis);
@@ -61,12 +61,109 @@ export async function getBriefing(userId: string) {
       // Suggested rivals carry baseline scores too — the figure is never empty.
       where: { company: { userId }, status: { not: "DISMISSED" }, threatScore: { not: null } },
       orderBy: { threatScore: "desc" },
-      select: { id: true, name: true, threatScore: true },
+      select: {
+        id: true,
+        name: true,
+        threatScore: true,
+        similarityScore: true,
+        marketPosition: true,
+        // Why it ranks first — the composition behind the score.
+        scoreSnapshots: { orderBy: { capturedAt: "desc" }, take: 1, select: { breakdown: true } },
+        // What they're doing now — the newest observation.
+        signals: {
+          orderBy: { detectedAt: "desc" },
+          take: 1,
+          select: {
+            title: true,
+            whyItMatters: true,
+            recommendation: true,
+            severity: true,
+            category: true,
+            detectedAt: true,
+            sourceUrl: true,
+            sourceName: true,
+            isInference: true,
+            confidence: true,
+          },
+        },
+        // How to compete — the strategic reads already synthesised for them.
+        insights: {
+          where: { dismissed: false },
+          orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
+          take: 2,
+          select: { title: true, body: true, type: true },
+        },
+      },
     }),
     listRecentSignals(userId, 8),
   ]);
 
-  return { company, classification, signalsLastDay, trackedCount, suggestedCount, topThreat, signals };
+  const topThreatBrief = topThreat ? buildTopThreatBrief(topThreat) : null;
+
+  return { company, classification, signalsLastDay, trackedCount, suggestedCount, topThreat, topThreatBrief, signals };
+}
+
+/* ── Top-threat brief — why #1, what they're doing, how to compete ─────
+   Pure assembly of intelligence we already store (score composition, newest
+   signal, strategic insights). No new AI call runs on the dashboard read. */
+
+export interface TopThreatBrief {
+  id: string;
+  name: string;
+  threatScore: number;
+  similarityPct: number | null;
+  marketPosition: string | null;
+  drivers: { label: string; value: number }[];
+  latest: {
+    title: string;
+    whyItMatters: string | null;
+    recommendation: string | null;
+    severity: SignalSeverity;
+    category: string;
+    detectedAt: Date;
+    sourceUrl: string | null;
+    sourceName: string | null;
+    isInference: boolean;
+    confidence: number | null;
+  } | null;
+  plays: { title: string; body: string; type: string }[];
+}
+
+function humanizeFactor(key: string) {
+  const s = key.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/[_-]+/g, " ").trim();
+  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+}
+
+type TopThreatRow = {
+  id: string;
+  name: string | null;
+  threatScore: number | null;
+  similarityScore: number | null;
+  marketPosition: string | null;
+  scoreSnapshots: { breakdown: unknown }[];
+  signals: TopThreatBrief["latest"][];
+  insights: { title: string; body: string; type: string }[];
+};
+
+function buildTopThreatBrief(t: TopThreatRow): TopThreatBrief {
+  const breakdown = (t.scoreSnapshots[0]?.breakdown ?? null) as Record<string, number> | null;
+  const drivers = breakdown
+    ? Object.entries(breakdown)
+        .filter(([, v]) => typeof v === "number")
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([k, v]) => ({ label: humanizeFactor(k), value: Math.round(v) }))
+    : [];
+  return {
+    id: t.id,
+    name: t.name ?? "This competitor",
+    threatScore: t.threatScore ?? 0,
+    similarityPct: t.similarityScore != null ? Math.round(t.similarityScore * 100) : null,
+    marketPosition: t.marketPosition ?? null,
+    drivers,
+    latest: t.signals[0] ?? null,
+    plays: t.insights,
+  };
 }
 
 /* ── Signal Momentum — severity-weighted signal intensity over time ──── */
