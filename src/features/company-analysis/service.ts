@@ -46,6 +46,8 @@ export interface CompanyAnalysis {
   confidence: number;
   /** One-line reason for the classification. */
   classification: string;
+  /** Short factual evidence phrases behind the classification ("Pricing page found"). */
+  signals: string[];
   name: string;
   industry: string;
   description: string;
@@ -87,6 +89,8 @@ export async function analyzeCompany(url: string, pageText: string): Promise<Com
           '"category" (one of ENTERPRISE, STARTUP, PRODUCT, PERSONAL, BLOG, UNKNOWN), ' +
           '"confidence" (0-1, your confidence in the category), ' +
           '"classification" (one short sentence: what this site is and why), ' +
+          '"signals" (string[] of 3-6 very short, factual evidence phrases behind the classification, ' +
+          'e.g. "Pricing page found", "Team / about page present", "Product feature list", "Blog / article feed"), ' +
           '"name", "industry", "description", "businessModel", "targetAudience", ' +
           '"features" (string[]), "keywords" (string[]), "technologies" (string[]).\n' +
           "Category guide: ENTERPRISE = an established company/organisation with products or services; " +
@@ -138,6 +142,7 @@ export async function analyzeCompany(url: string, pageText: string): Promise<Com
     classification: noPage
       ? aiText(raw.classification) || "The site couldn't be read, so it can't be verified as a company."
       : aiText(raw.classification),
+    signals: aiList(raw.signals).slice(0, 6),
     name: aiText(raw.name),
     industry: aiText(raw.industry),
     description: aiText(raw.description),

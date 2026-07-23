@@ -12,6 +12,7 @@ import { RetryAnalysis } from "@/features/dashboard/components/retry-analysis";
 import { MarkSeen } from "@/features/dashboard/components/mark-seen";
 import { SignalMomentum } from "@/features/dashboard/components/signal-momentum";
 import { MarketQuery } from "@/features/dashboard/components/market-query";
+import { ClassificationReadout } from "@/features/dashboard/components/classification-readout";
 import { LAST_SEEN_COOKIE } from "@/features/dashboard/constants";
 
 export const metadata: Metadata = { title: "Dashboard" };
@@ -90,25 +91,18 @@ export default async function DashboardPage() {
             Analysis could not complete. <RetryAnalysis companyId={company.id} />
           </div>
         )}
-        {classification && !classification.competitive && (
-          <div className="border-b border-[var(--t-line)] bg-white/[0.02] px-5 py-4 sm:px-7">
-            <p className="font-data text-[10px] uppercase tracking-[0.2em] text-[var(--t-pewter)]">
-              Classified · {classification.label}
-            </p>
-            <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-[var(--t-text)]">
-              This site reads as a {classification.label.toLowerCase()}, not a company — so competitive
-              intelligence (competitors, threats, strategy) doesn&apos;t apply here.
-              {classification.reason ? ` ${classification.reason}` : ""}
-            </p>
-            <p className="mt-1.5 text-sm text-[var(--t-muted)]">
-              If this is actually a company, change the website in{" "}
-              <Link href="/settings" className="text-[var(--t-accent)] hover:underline">
-                Settings
-              </Link>{" "}
-              and re-run analysis.
-            </p>
-          </div>
-        )}
+        {classification &&
+          (!classification.competitive ||
+            classification.confidence != null ||
+            classification.signals.length > 0) && (
+            <ClassificationReadout
+              label={classification.label}
+              reason={classification.reason}
+              confidence={classification.confidence}
+              signals={classification.signals}
+              competitive={classification.competitive}
+            />
+          )}
 
         {/* Stat tiles */}
         <section aria-label="Key figures" className="grid grid-cols-1 gap-px bg-[var(--t-line)] sm:grid-cols-3">

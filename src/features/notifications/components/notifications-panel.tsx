@@ -7,6 +7,7 @@ import { Clock, Mail, Send, SlidersHorizontal, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Toggle } from "@/components/ui/toggle";
 
@@ -62,8 +63,6 @@ const COMMON_TZ_LABELED: { value: string; label: string }[] = [
   { value: "UTC", label: "UTC" },
 ];
 
-const selectClass =
-  "h-10 rounded-md border border-border bg-surface-overlay px-2.5 text-sm text-foreground shadow-[inset_0_1px_2px_rgb(35_35_31/0.03)] outline-none transition-colors hover:border-border-strong/40 focus:border-accent/50 focus:ring-2 focus:ring-accent/20";
 
 function destinationOf(channel: NotificationChannel): string {
   const config = (channel.config ?? {}) as { email?: string; chatId?: string };
@@ -328,15 +327,14 @@ function ScheduleEditor({
     <div className="mt-4 grid grid-cols-1 gap-4 rounded-xl border border-border bg-surface-raised/40 p-5 sm:grid-cols-2">
       <label className="flex flex-col gap-1.5">
         <span className="microlabel">How often</span>
-        <select
-          className={selectClass}
+        <Select
           value={frequency}
           onChange={(e) => setFrequency(e.target.value as typeof frequency)}
         >
           {FREQUENCIES.map((f) => (
             <option key={f.value} value={f.value}>{f.label}</option>
           ))}
-        </select>
+        </Select>
       </label>
 
       {isDigest && (
@@ -354,11 +352,11 @@ function ScheduleEditor({
       {frequency === "WEEKLY" && (
         <label className="flex flex-col gap-1.5">
           <span className="microlabel">Day of week</span>
-          <select className={selectClass} value={weeklyDay} onChange={(e) => setWeeklyDay(Number(e.target.value))}>
+          <Select value={weeklyDay} onChange={(e) => setWeeklyDay(Number(e.target.value))}>
             {[1, 2, 3, 4, 5, 6, 7].map((d) => (
               <option key={d} value={d}>{DAY_NAMES[d]}</option>
             ))}
-          </select>
+          </Select>
         </label>
       )}
 
@@ -378,15 +376,14 @@ function ScheduleEditor({
 
       <label className="flex flex-col gap-1.5">
         <span className="microlabel">Only include</span>
-        <select
-          className={selectClass}
+        <Select
           value={priorityThreshold}
           onChange={(e) => setPriorityThreshold(e.target.value as typeof priorityThreshold)}
         >
           {SEVERITIES.map((s) => (
             <option key={s.value} value={s.value}>{s.label}</option>
           ))}
-        </select>
+        </Select>
       </label>
 
       <div className="flex items-center gap-3 sm:col-span-2">
@@ -484,8 +481,7 @@ function DeliveryPreferences({ onNotice }: { onNotice: (m: string) => void }) {
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
         <label className="flex flex-col gap-1.5">
           <span className="microlabel">Your timezone</span>
-          <select
-            className={selectClass}
+          <Select
             value={s.timezone}
             onChange={(e) => save.mutate({ timezone: e.target.value })}
           >
@@ -499,7 +495,7 @@ function DeliveryPreferences({ onNotice }: { onNotice: (m: string) => void }) {
                 <option key={z} value={z}>{z.replace(/_/g, " ")}</option>
               ))}
             </optgroup>
-          </select>
+          </Select>
           <span className="text-xs text-faint">
             Delivery times use this zone — India is at the top of the list.
           </span>

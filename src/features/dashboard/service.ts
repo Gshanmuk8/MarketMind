@@ -9,16 +9,30 @@ import {
 
 /** Read the site classification off the stored analysis JSON (if present). */
 function readClassification(analysis: unknown) {
-  const a = (analysis ?? {}) as { category?: string; confidence?: number; classification?: string };
+  const a = (analysis ?? {}) as {
+    category?: string;
+    confidence?: number;
+    classification?: string;
+    signals?: unknown;
+  };
   const category =
     a.category && (a.category as WebsiteCategory) in CATEGORY_LABEL
       ? (a.category as WebsiteCategory)
       : null;
   if (!category) return null;
+  const confidence =
+    typeof a.confidence === "number" && Number.isFinite(a.confidence)
+      ? Math.min(1, Math.max(0, a.confidence))
+      : null;
+  const signals = Array.isArray(a.signals)
+    ? a.signals.filter((s): s is string => typeof s === "string" && s.trim().length > 0).slice(0, 6)
+    : [];
   return {
     category,
     label: CATEGORY_LABEL[category],
     reason: a.classification ?? "",
+    confidence,
+    signals,
     competitive: isCompetitiveTarget({ category, confidence: a.confidence ?? 0 }),
   };
 }
