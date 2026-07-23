@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/session";
-import { getTimelineForUser, isStale } from "@/features/competitor-timeline/service";
+import { getTimelineForUser, isStale, isTimelineEmpty } from "@/features/competitor-timeline/service";
 import type { TimelineResponse } from "@/features/competitor-timeline/types";
 import { inngest, Events } from "@/jobs/client";
 
@@ -20,18 +20,21 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   }
 
   const cache = result.cache;
-  const stale = isStale(cache);
+  // An empty cache (e.g. an older weak generation) is treated like stale so a
+  // fresh, richer generation replaces it and the client keeps polling for it.
+  const empty = isTimelineEmpty(cache);
+  const needsRefresh = isStale(cache) || empty;
 
-  if (stale) {
+  if (needsRefresh) {
     // Kick a generation; harmless if one is already running (serialized +
-    // freshness-guarded server-side). Best-effort — never fail the read.
+    // freshness/empty-cooldown-guarded server-side). Best-effort.
     await inngest
       .send({ name: Events.timelineGenerateRequested, data: { competitorId: id } })
       .catch(() => undefined);
   }
 
   const body: TimelineResponse = {
-    status: cache ? (stale ? "refreshing" : "ready") : "generating",
+    status: !cache ? "generating" : needsRefresh ? "refreshing" : "ready",
     timeline: cache?.data ?? null,
     generatedAt: cache?.generatedAt ?? null,
   };

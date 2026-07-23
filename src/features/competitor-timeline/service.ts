@@ -42,6 +42,27 @@ function readCache(profile: unknown): TimelineCache | null {
   return p.timeline ?? null;
 }
 
+/** A timeline with nothing in any window and no adoption read is "empty". */
+function isEmptyData(data?: TimelineData | null): boolean {
+  if (!data) return true;
+  const items = Object.values(data.buckets).reduce((n, b) => n + (b?.items?.length ?? 0), 0);
+  const a = data.adoption;
+  const adoption =
+    a.useCases.length +
+    a.popularFeatures.length +
+    a.industries.length +
+    a.communityThemes.length +
+    a.painPoints.length +
+    a.requestedFeatures.length +
+    (a.sentiment ? 1 : 0);
+  return items === 0 && adoption === 0;
+}
+
+/** Exposed so the API/cron can force a regen of an empty (weakly-generated) cache. */
+export function isTimelineEmpty(cache?: TimelineCache | null): boolean {
+  return isEmptyData(cache?.data);
+}
+
 /** Read the cached timeline for a competitor the user owns. */
 export async function getTimelineForUser(userId: string, competitorId: string) {
   const competitor = await db.competitor.findFirst({
@@ -122,8 +143,13 @@ export async function generateTimeline(competitorId: string, force = false) {
   const cache = readCache(competitor.profile);
   if (!force && cache?.generatedAt) {
     const age = Date.now() - Date.parse(cache.generatedAt);
-    if (Number.isFinite(age) && age < FRESH_GUARD_MS) {
-      return { competitorId, skipped: true as const, reason: "fresh" };
+    if (Number.isFinite(age)) {
+      const empty = isEmptyData(cache.data);
+      // Fresh AND non-empty → skip. An empty cache is allowed to regenerate
+      // (e.g. after a prompt improvement) but no more than every 30 min so
+      // repeated views of a genuinely-unknown competitor don't hammer the AI.
+      if (!empty && age < FRESH_GUARD_MS) return { competitorId, skipped: true as const, reason: "fresh" };
+      if (empty && age < 30 * 60 * 1000) return { competitorId, skipped: true as const, reason: "empty-cooldown" };
     }
   }
 
@@ -162,15 +188,24 @@ export async function generateTimeline(competitorId: string, force = false) {
           '{ "buckets": { "day": B, "week": B, "month": B, "year": B }, "adoption": {' +
           ' "useCases": string[], "popularFeatures": string[], "industries": string[], "sentiment": string,' +
           ' "communityThemes": string[], "painPoints": string[], "requestedFeatures": string[] } }\n' +
-          'where each B = { "summary": string (1-2 sentences; may be "" for day), "items": [ { "category": ' +
-          'e.g. Product|Pricing|Marketing|Sales|Funding|Partnership|Hiring|Engineering|Community|Press, ' +
+          'where each B = { "summary": string (1-2 sentences), "items": [ { "category": ' +
+          'Product|Pricing|Marketing|Sales|Funding|Partnership|Hiring|Engineering|Community|Press, ' +
           '"title": specific one line, "detail": 1-2 sentences, "observed": boolean } ] }.\n' +
-          "Rules: The OBSERVED SIGNALS below are real, verified events from our monitoring — fold them into the " +
-          "right windows with observed=true. For the 24h and 7d windows, rely PRIMARILY on observed signals " +
-          "(you cannot reliably know very recent events otherwise; do not fabricate them). For month/year and " +
-          "adoption, you may add well-known public developments and community themes with observed=false. Never " +
-          "invent precise metrics, dates, or dollar amounts. Be specific and useful, not generic. Empty arrays " +
-          "where you have nothing real to say — an honest gap beats a fabricated one.",
+          "ALWAYS return a genuinely useful, populated read — never a blank timeline. Rules:\n" +
+          "• OBSERVED SIGNALS below are real, verified events from our monitoring — fold them into the right " +
+          "window with observed=true.\n" +
+          "• 24h / 7d windows: lead with observed signals. If none, DON'T invent recent events — give a one-line " +
+          "summary of the competitor's current focus and leave items empty for that window only.\n" +
+          "• 30d / 365d windows: DRAW ON YOUR KNOWLEDGE of THIS company and its category to describe real, known " +
+          "developments and patterns — product direction, notable launches, funding/round history, market moves, " +
+          "positioning shifts — 3–6 substantive items each, observed=false. If you don't recognise the company, " +
+          "infer confidently from its domain, description, and industry what a product like this does and how it " +
+          "typically evolves (still observed=false).\n" +
+          "• adoption: ALWAYS fill every field (3–6 entries each where possible) from public knowledge of the " +
+          "product and its category — real use cases, popular features, industries, community sentiment/themes " +
+          "(HN/Reddit/X), common pain points, and frequently-requested features.\n" +
+          "• Be specific and concrete, never generic filler. Do NOT fabricate precise metrics, exact dates, or " +
+          "dollar amounts — keep quantitative claims qualitative unless they're in the observed signals.",
       },
       {
         role: "user",

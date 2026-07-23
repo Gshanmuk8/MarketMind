@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Activity, Clock, Sparkles, Users } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
@@ -27,13 +27,31 @@ export function ActivityTimeline({ competitorId }: { competitorId: string }) {
       if (!res.ok) throw new Error("Could not load the activity timeline.");
       return res.json();
     },
-    refetchInterval: (query) => (query.state.data?.status === "ready" ? false : 8000),
+    // Poll while a generation/refresh is in flight — but cap it (~1 min) so a
+    // genuinely-unknown competitor doesn't poll forever.
+    refetchInterval: (query) => {
+      if (query.state.data?.status === "ready") return false;
+      if ((query.state.dataUpdateCount ?? 0) >= 9) return false;
+      return 8000;
+    },
     staleTime: 60_000,
   });
 
   const timeline = data?.timeline ?? null;
   const generating = !timeline && data?.status !== "unavailable";
   const refreshing = Boolean(timeline) && data?.status === "refreshing";
+
+  // Land on the first window that actually has activity (usually month/year),
+  // rather than an empty "Last 24 hours". Runs once, never overrides a click.
+  const autoPicked = useRef(false);
+  useEffect(() => {
+    if (autoPicked.current || !timeline) return;
+    const firstFilled = TIMELINE_WINDOWS.find((w) => (timeline.buckets[w.key]?.items.length ?? 0) > 0);
+    if (firstFilled && (timeline.buckets[active]?.items.length ?? 0) === 0) {
+      setActive(firstFilled.key);
+    }
+    autoPicked.current = true;
+  }, [timeline, active]);
 
   return (
     <section aria-label="Competitor activity timeline">
@@ -159,7 +177,9 @@ export function ActivityTimeline({ competitorId }: { competitorId: string }) {
             ) : (
               <div className="flex items-center gap-3 rounded-xl border border-dashed border-[var(--t-line)] px-5 py-8 text-sm text-[var(--t-faint)]">
                 <Activity className="size-4" strokeWidth={1.5} />
-                No notable activity recorded in this window yet.
+                {active === "day" || active === "week"
+                  ? "Quiet in this window — try a longer range (month or year) for the fuller picture."
+                  : "No notable activity recorded in this window."}
               </div>
             )}
           </div>
