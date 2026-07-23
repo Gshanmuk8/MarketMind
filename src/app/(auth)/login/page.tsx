@@ -42,6 +42,7 @@ export default function LoginPage() {
       <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-3">
         <Input
           type="email"
+          aria-label="Email address"
           placeholder="you@company.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -49,6 +50,7 @@ export default function LoginPage() {
         />
         <Input
           type="password"
+          aria-label="Password"
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}

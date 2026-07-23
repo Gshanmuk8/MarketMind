@@ -51,7 +51,7 @@ export default async function DashboardPage() {
     );
   }
 
-  const { company, signalsLastDay, trackedCount, suggestedCount, topThreat, signals } = briefing;
+  const { company, classification, signalsLastDay, trackedCount, suggestedCount, topThreat, signals } = briefing;
   const analyzing = company.analysisStatus === "PENDING" || company.analysisStatus === "ANALYZING";
 
   // "New since your last visit" — from the per-device cookie MarkSeen stamps.
@@ -88,6 +88,25 @@ export default async function DashboardPage() {
         {company.analysisStatus === "FAILED" && (
           <div className="border-b border-[var(--t-line)] px-5 py-4 text-sm text-[var(--t-critical)] sm:px-7">
             Analysis could not complete. <RetryAnalysis companyId={company.id} />
+          </div>
+        )}
+        {classification && !classification.competitive && (
+          <div className="border-b border-[var(--t-line)] bg-white/[0.02] px-5 py-4 sm:px-7">
+            <p className="font-data text-[10px] uppercase tracking-[0.2em] text-[var(--t-pewter)]">
+              Classified · {classification.label}
+            </p>
+            <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-[var(--t-text)]">
+              This site reads as a {classification.label.toLowerCase()}, not a company — so competitive
+              intelligence (competitors, threats, strategy) doesn&apos;t apply here.
+              {classification.reason ? ` ${classification.reason}` : ""}
+            </p>
+            <p className="mt-1.5 text-sm text-[var(--t-muted)]">
+              If this is actually a company, change the website in{" "}
+              <Link href="/settings" className="text-[var(--t-accent)] hover:underline">
+                Settings
+              </Link>{" "}
+              and re-run analysis.
+            </p>
           </div>
         )}
 

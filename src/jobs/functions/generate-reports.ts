@@ -2,6 +2,7 @@ import { inngest, Events } from "@/jobs/client";
 import { db } from "@/lib/db";
 import { generateReport } from "@/features/reports/service";
 import { deliverReport } from "@/features/notifications/service";
+import { isCompetitiveTarget, type WebsiteCategory } from "@/features/company-analysis/service";
 import type { ReportType } from "@prisma/client";
 
 /**
@@ -15,14 +16,22 @@ export const generateReportsJob = inngest.createFunction(
   async ({ event, step }) => {
     const data = (event?.data ?? {}) as { companyId?: string; type?: ReportType };
 
-    const companies = await step.run("load-companies", () =>
-      db.company.findMany({
+    const companies = await step.run("load-companies", async () => {
+      const rows = await db.company.findMany({
         where: data.companyId
           ? { id: data.companyId, analysisStatus: "COMPLETE" }
           : { analysisStatus: "COMPLETE" },
-        select: { id: true },
-      })
-    );
+        select: { id: true, analysis: true },
+      });
+      // No reports for personal sites / blogs / unknown pages — nothing to
+      // report on. Legacy rows without a classification keep working.
+      return rows
+        .filter((c) => {
+          const a = (c.analysis ?? {}) as { category?: WebsiteCategory; confidence?: number };
+          return !a.category || isCompetitiveTarget({ category: a.category, confidence: a.confidence ?? 0 });
+        })
+        .map((c) => ({ id: c.id }));
+    });
 
     let generated = 0;
     let delivered = 0;

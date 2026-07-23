@@ -46,6 +46,7 @@ export default function SignupPage() {
 
       <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-3">
         <Input
+          aria-label="Full name"
           placeholder="Full name"
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -53,6 +54,7 @@ export default function SignupPage() {
         />
         <Input
           type="email"
+          aria-label="Email address"
           placeholder="you@company.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -60,6 +62,7 @@ export default function SignupPage() {
         />
         <Input
           type="password"
+          aria-label="Password"
           placeholder="Password (8+ characters)"
           value={password}
           onChange={(e) => setPassword(e.target.value)}

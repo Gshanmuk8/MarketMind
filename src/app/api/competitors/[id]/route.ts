@@ -32,9 +32,13 @@ export async function PATCH(
     // quickly instead of waiting for the next cron. Best-effort: a queue
     // failure must not fail the curation itself.
     if (parsed.data.status === "TRACKING") {
-      await inngest.send({ name: Events.monitorTick, data: {} }).catch((error) => {
-        console.error("[competitors] failed to queue monitor tick:", error);
-      });
+      // Scope the on-demand sweep to THIS user's company — an empty payload
+      // would fan out a full monitoring run across every tenant.
+      await inngest
+        .send({ name: Events.monitorTick, data: { companyId: competitor.companyId } })
+        .catch((error) => {
+          console.error("[competitors] failed to queue monitor tick:", error);
+        });
     }
 
     return NextResponse.json({ competitor });

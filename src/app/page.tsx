@@ -83,7 +83,7 @@ export default async function LandingPage({
                 Analyze my company
                 <ArrowRight className="size-4" strokeWidth={1.5} />
               </Link>
-              <p className="microlabel">One URL · ~60 seconds</p>
+              <p className="microlabel">One URL · ~1–3 minutes</p>
             </div>
           </div>
 
@@ -126,7 +126,7 @@ export default async function LandingPage({
             <div className="border border-border bg-surface-overlay p-6 sm:p-8 lg:p-10">
               <div className="flex flex-wrap items-center gap-3">
                 <p className="microlabel">Signal · Competitor pricing</p>
-                <Badge variant="critical">Important</Badge>
+                <Badge variant="warning">Important</Badge>
               </div>
               <h3 className="mt-5 font-sans text-base font-medium leading-relaxed">
                 Acme launched a free tier with 10,000 requests per month.

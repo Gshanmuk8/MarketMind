@@ -18,7 +18,7 @@ export const TERMINAL: CSSProperties = {
   "--t-line": "#302d20",
   "--t-text": "#eae6d8",
   "--t-muted": "#a29d8b",
-  "--t-faint": "#6f6b59",
+  "--t-faint": "#8f8a75",
   "--t-accent": "#9cbb84", // sage, brightened for ink
   "--t-live": "#79aabd", // mineral
   "--t-gold": "#d0b768", // score
@@ -107,7 +107,11 @@ export function TerminalSignalRow({
         <span
           aria-hidden
           className="text-[9px]"
-          style={{ color: SEV[signal.severity], textShadow: `0 0 8px ${SEV[signal.severity]}` }}
+          style={{
+            color: SEV[signal.severity],
+            // Glow only reads on important marks; on INFO/faint it's a smudge.
+            textShadow: signal.severity === "INFO" ? undefined : `0 0 7px ${SEV[signal.severity]}`,
+          }}
         >
           ●
         </span>

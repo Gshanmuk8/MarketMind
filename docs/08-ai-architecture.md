@@ -24,6 +24,10 @@ Routing principles:
 - Every task has an ordered fallback chain; unconfigured or failing providers are skipped automatically.
 - `json: true` forces `response_format: json_object`; callers parse and validate defensively.
 
+## Website classification (analysis gating)
+
+`analyzeCompany` **classifies before it analyses**: every URL is tagged `category` ∈ {ENTERPRISE, STARTUP, PRODUCT, PERSONAL, BLOG, UNKNOWN} with a `confidence` (0–1) and a one-line `classification` reason, stored in `Company.analysis` (JSON — no migration). `isCompetitiveTarget()` = ENTERPRISE/STARTUP/PRODUCT ∧ confidence ≥ 0.4. The onboarding pipeline (`analyze-company`) **gates on it**: only competitive targets get competitor discovery, threat scoring, and strategy — a personal site, blog, or unknown/low-confidence page is understood and surfaced honestly (dashboard shows a "Classified · <type>" notice) but **never handed fabricated enterprise intelligence**. The prompt is instructed to leave business fields empty and never invent a business model/competitors/metrics for non-companies.
+
 ## Grounding rules
 
 - Prompts that produce user-facing conclusions must distinguish evidence from inference and be conservative with severity (see `enrichSignal`).

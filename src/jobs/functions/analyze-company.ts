@@ -1,6 +1,10 @@
 import { inngest, Events } from "@/jobs/client";
 import { db } from "@/lib/db";
-import { analyzeCompany, fetchCompanyPage } from "@/features/company-analysis/service";
+import {
+  analyzeCompany,
+  fetchCompanyPage,
+  isCompetitiveTarget,
+} from "@/features/company-analysis/service";
 import { discoverCompetitors } from "@/features/competitor-discovery/service";
 import { assessBaselineThreats } from "@/features/monitoring/service";
 import { generateCompanyInsights } from "@/features/insights/service";
@@ -67,6 +71,21 @@ export const analyzeCompanyJob = inngest.createFunction(
       })
     );
 
+    // Only real companies/products get competitive intelligence. A personal
+    // site, blog, or unknown page is understood and shown honestly — never
+    // handed fabricated competitors, threat scores, or strategy.
+    if (!isCompetitiveTarget(analysis)) {
+      await step.run("mark-complete-noncompetitive", () =>
+        db.company.update({ where: { id: companyId }, data: { analysisStatus: "COMPLETE" } })
+      );
+      return {
+        companyId,
+        category: analysis.category,
+        competitive: false as const,
+        competitorsFound: 0,
+      };
+    }
+
     const competitors = await step.run("discover-competitors", () =>
       discoverCompetitors(analysis)
     );
@@ -113,6 +132,6 @@ export const analyzeCompanyJob = inngest.createFunction(
       data: { companyId },
     });
 
-    return { companyId, competitorsFound: competitors.length };
+    return { companyId, category: analysis.category, competitive: true as const, competitorsFound: competitors.length };
   }
 );

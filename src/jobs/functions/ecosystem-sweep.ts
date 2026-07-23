@@ -4,6 +4,7 @@ import {
   collectEcosystemItems,
   sweepEcosystemForCompany,
 } from "@/features/monitoring/sources/ecosystem";
+import { isCompetitiveTarget, type WebsiteCategory } from "@/features/company-analysis/service";
 
 /**
  * Ecosystem sweep (doc 09): every 6 hours — or on demand — read the tech,
@@ -24,12 +25,20 @@ export const ecosystemSweepJob = inngest.createFunction(
     const items = await step.run("collect-feeds", () => collectEcosystemItems());
     if (items.length === 0) return { items: 0, companies: 0, signalsRecorded: 0 };
 
-    const companies = await step.run("load-companies", () =>
-      db.company.findMany({
+    const companies = await step.run("load-companies", async () => {
+      const rows = await db.company.findMany({
         where: { analysisStatus: "COMPLETE", ...(companyId ? { id: companyId } : {}) },
-        select: { id: true },
-      })
-    );
+        select: { id: true, analysis: true },
+      });
+      // A personal site / blog / unknown page must not accrue market signals.
+      // Legacy rows without a classification keep working (treated as company).
+      return rows
+        .filter((c) => {
+          const a = (c.analysis ?? {}) as { category?: WebsiteCategory; confidence?: number };
+          return !a.category || isCompetitiveTarget({ category: a.category, confidence: a.confidence ?? 0 });
+        })
+        .map((c) => ({ id: c.id }));
+    });
 
     let signalsRecorded = 0;
     for (const company of companies) {

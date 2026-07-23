@@ -4,9 +4,15 @@
  * prose — never let that take down a pipeline step.
  */
 export function parseAiJson<T>(text: string): T {
-  // Strip markdown fences first — reasoning models often emit
-  // ```json ... ``` even under response_format.
-  const trimmed = text
+  // Reasoning models (gpt-oss, GLM, …) may prepend a hidden chain-of-thought
+  // that can contain stray braces/JSON examples — strip it before anything
+  // else, or the bracket-slice fallback grabs the wrong object.
+  const withoutThinking = text
+    .replace(/<think>[\s\S]*?<\/think>/gi, "")
+    .replace(/<reasoning>[\s\S]*?<\/reasoning>/gi, "");
+  // Strip markdown fences — models often emit ```json even under
+  // response_format.
+  const trimmed = withoutThinking
     .trim()
     .replace(/^```(?:json)?\s*/i, "")
     .replace(/\s*```$/, "")

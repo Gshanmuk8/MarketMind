@@ -21,10 +21,18 @@ export const runMonitorsJob = inngest.createFunction(
     concurrency: { limit: 1 },
   },
   [{ cron: "0 */6 * * *" }, { event: Events.monitorTick }],
-  async ({ step }) => {
+  async ({ event, step }) => {
+    // An on-demand tick carries the acting user's companyId; the cron omits it
+    // (sweeps everyone). Never let a single "Track" fan out across all tenants.
+    const companyId = (event?.data as { companyId?: string } | undefined)?.companyId;
+
     const competitors = await step.run("load-tracked-competitors", () =>
       db.competitor.findMany({
-        where: { status: "TRACKING", company: { analysisStatus: "COMPLETE" } },
+        where: {
+          status: "TRACKING",
+          company: { analysisStatus: "COMPLETE" },
+          ...(companyId ? { companyId } : {}),
+        },
         select: { id: true, name: true, threatScore: true },
       })
     );

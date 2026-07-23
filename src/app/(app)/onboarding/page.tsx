@@ -1,13 +1,22 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { getSessionUser } from "@/lib/session";
+import { db } from "@/lib/db";
 import { OnboardingForm } from "@/features/onboarding/components/onboarding-form";
 
 export const metadata: Metadata = { title: "Add your company" };
 
 /**
  * The single-input onboarding: user enters their company URL and the
- * AI Company Understanding Engine takes over.
+ * AI Company Understanding Engine takes over. One company per user, so a
+ * user who already has one is sent to the dashboard rather than hitting a 409.
  */
-export default function OnboardingPage() {
+export default async function OnboardingPage() {
+  const user = await getSessionUser();
+  if (!user) redirect("/login");
+  const existing = await db.company.findFirst({ where: { userId: user.id }, select: { id: true } });
+  if (existing) redirect("/dashboard");
+
   return (
     <div className="rise mx-auto flex min-h-[70vh] max-w-xl flex-col justify-center">
       <p className="microlabel mb-6 text-center">Begin the briefing</p>
@@ -16,7 +25,7 @@ export default function OnboardingPage() {
       </h1>
       <p className="mt-4 text-center leading-relaxed text-muted">
         Paste your website. We&apos;ll understand your product, map your market, and
-        discover your competitors — in about 60 seconds.
+        discover your competitors — usually in 1–3 minutes.
       </p>
       <div className="mt-10">
         <OnboardingForm />

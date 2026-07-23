@@ -198,12 +198,14 @@ export function DecisionCard({ decision }: { decision: Decision }) {
         <form onSubmit={submitDecision} className="mt-4 flex flex-col gap-2 border-t border-border pt-4">
           <Input
             autoFocus
+            aria-label="What did you decide?"
             placeholder="What did you decide?"
             value={choice}
             onChange={(e) => setChoice(e.target.value)}
             required
           />
           <Input
+            aria-label="Why did you decide this?"
             placeholder="Why? (the argument that won)"
             value={rationale}
             onChange={(e) => setRationale(e.target.value)}

@@ -21,6 +21,15 @@ export function extractDomain(url: string): string {
   if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/.test(domain)) {
     throw new Error(`Not a valid website: ${url}`);
   }
+
+  // Block IP-literals and internal hostnames — the analysis job fetches this
+  // URL server-side, so an internal address (cloud metadata, RFC1918, loopback)
+  // would be an SSRF vector. Only public DNS names are allowed.
+  const labels = domain.split(".");
+  const allNumeric = labels.every((l) => /^\d+$/.test(l));
+  if (allNumeric || domain === "localhost" || /\.(local|internal|localhost|home|lan)$/.test(domain)) {
+    throw new Error(`Not a public website: ${url}`);
+  }
   return domain;
 }
 

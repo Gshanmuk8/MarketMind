@@ -1,6 +1,27 @@
 import { db } from "@/lib/db";
 import type { SignalSeverity } from "@prisma/client";
 import { countSignalsLastDay, listRecentSignals } from "@/features/signals/service";
+import {
+  CATEGORY_LABEL,
+  isCompetitiveTarget,
+  type WebsiteCategory,
+} from "@/features/company-analysis/service";
+
+/** Read the site classification off the stored analysis JSON (if present). */
+function readClassification(analysis: unknown) {
+  const a = (analysis ?? {}) as { category?: string; confidence?: number; classification?: string };
+  const category =
+    a.category && (a.category as WebsiteCategory) in CATEGORY_LABEL
+      ? (a.category as WebsiteCategory)
+      : null;
+  if (!category) return null;
+  return {
+    category,
+    label: CATEGORY_LABEL[category],
+    reason: a.classification ?? "",
+    competitive: isCompetitiveTarget({ category, confidence: a.confidence ?? 0 }),
+  };
+}
 
 /**
  * The morning briefing — everything the dashboard needs, gathered in one
@@ -13,8 +34,10 @@ export async function getBriefing(userId: string) {
   });
 
   if (!company) {
-    return { company: null, signalsLastDay: 0, trackedCount: 0, suggestedCount: 0, topThreat: null, signals: [] as Awaited<ReturnType<typeof listRecentSignals>> };
+    return { company: null, classification: null, signalsLastDay: 0, trackedCount: 0, suggestedCount: 0, topThreat: null, signals: [] as Awaited<ReturnType<typeof listRecentSignals>> };
   }
+
+  const classification = readClassification(company.analysis);
 
   const [signalsLastDay, trackedCount, suggestedCount, topThreat, signals] = await Promise.all([
     countSignalsLastDay(userId),
@@ -29,7 +52,7 @@ export async function getBriefing(userId: string) {
     listRecentSignals(userId, 8),
   ]);
 
-  return { company, signalsLastDay, trackedCount, suggestedCount, topThreat, signals };
+  return { company, classification, signalsLastDay, trackedCount, suggestedCount, topThreat, signals };
 }
 
 /* ── Signal Momentum — severity-weighted signal intensity over time ──── */

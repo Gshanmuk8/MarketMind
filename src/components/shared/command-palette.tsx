@@ -13,6 +13,7 @@ import {
   Settings2,
   Sparkles,
 } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { mainNav, secondaryNav } from "@/config/navigation";
 
 interface SearchResults {
@@ -145,7 +146,7 @@ export function CommandPalette() {
               placeholder="Ask anything, or search competitors, signals, decisions…"
               className="h-14 w-full bg-transparent text-sm outline-none placeholder:text-faint"
             />
-            {isFetching && <Spinner />}
+            {isFetching && <Spinner className="size-4 text-accent" label="Searching" />}
           </div>
 
           <Command.List className="max-h-[60vh] overflow-y-auto p-2">
@@ -264,14 +265,5 @@ function Kbd({ children }: { children: React.ReactNode }) {
     <kbd className="font-data rounded border border-border bg-surface px-1.5 py-0.5 text-[10px] text-muted">
       {children}
     </kbd>
-  );
-}
-
-function Spinner() {
-  return (
-    <span
-      className="size-4 shrink-0 animate-spin rounded-full border-2 border-border border-t-accent motion-reduce:animate-none"
-      aria-label="Searching"
-    />
   );
 }

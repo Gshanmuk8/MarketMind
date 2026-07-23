@@ -34,15 +34,25 @@ export interface CompanyContext {
   keywords?: string[];
 }
 
+const NEUTRAL_ENRICHMENT: SignalEnrichment = {
+  severity: "INFO",
+  whyItMatters: "",
+  recommendation: "",
+  confidence: 0.3,
+};
+
 export async function enrichSignal(
   event: RawEvent,
   company: CompanyContext
 ): Promise<SignalEnrichment> {
-  const res = await ai.complete({
+  try {
+    const res = await ai.complete({
     task: "scoring",
     json: true,
     temperature: 0.2,
-    maxTokens: 400,
+    // Reasoning models (gpt-oss/GLM lead the scoring chain) spend hidden
+    // tokens; too small a budget truncates the JSON and throws. Give it room.
+    maxTokens: 900,
     messages: [
       {
         role: "system",
@@ -65,20 +75,25 @@ export async function enrichSignal(
     ],
   });
 
-  const parsed = parseAiJson<Partial<SignalEnrichment>>(res.text);
-  const severities: SignalSeverity[] = ["INFO", "NOTABLE", "IMPORTANT", "CRITICAL"];
+    const parsed = parseAiJson<Partial<SignalEnrichment>>(res.text);
+    const severities: SignalSeverity[] = ["INFO", "NOTABLE", "IMPORTANT", "CRITICAL"];
 
-  return {
-    severity: severities.includes(parsed.severity as SignalSeverity)
-      ? (parsed.severity as SignalSeverity)
-      : "INFO",
-    // aiText: a model returning an object/array here must degrade to "",
-    // not crash the Prisma write after the watermark already advanced.
-    whyItMatters: aiText(parsed.whyItMatters),
-    recommendation: aiText(parsed.recommendation),
-    confidence: Math.min(
-      1,
-      Math.max(0, typeof parsed.confidence === "number" ? parsed.confidence : 0.5)
-    ),
-  };
+    return {
+      severity: severities.includes(parsed.severity as SignalSeverity)
+        ? (parsed.severity as SignalSeverity)
+        : "INFO",
+      // aiText: a model returning an object/array here must degrade to "",
+      // not crash the Prisma write after the watermark already advanced.
+      whyItMatters: aiText(parsed.whyItMatters),
+      recommendation: aiText(parsed.recommendation),
+      confidence: Math.min(
+        1,
+        Math.max(0, typeof parsed.confidence === "number" ? parsed.confidence : 0.5)
+      ),
+    };
+  } catch {
+    // Enrichment must never lose the signal — a truncated/failed AI call
+    // records it neutral+labeled rather than throwing out of the monitor loop.
+    return NEUTRAL_ENRICHMENT;
+  }
 }

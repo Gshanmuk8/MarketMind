@@ -55,7 +55,7 @@ export function ChatPanel() {
   function submit(e: React.FormEvent) {
     e.preventDefault();
     const question = input.trim();
-    if (!question || ask.isPending) return;
+    if (question.length < 2 || ask.isPending) return;
     setInput("");
     ask.mutate(question);
   }

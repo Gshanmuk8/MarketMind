@@ -99,6 +99,7 @@ export function DecisionWorkspace() {
             <form onSubmit={submit} className="flex flex-col gap-2">
               <Input
                 autoFocus
+                aria-label="Decision question"
                 placeholder="The question — e.g. Should we build voice coaching?"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -106,6 +107,7 @@ export function DecisionWorkspace() {
                 minLength={3}
               />
               <Input
+                aria-label="Context for this decision"
                 placeholder="Context — what's prompting this, right now?"
                 value={context}
                 onChange={(e) => setContext(e.target.value)}

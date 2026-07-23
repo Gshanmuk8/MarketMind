@@ -27,7 +27,7 @@
   /* ── Ink: soft graphite, never pure black ────────────────────────── */
   --color-foreground: #23231f; /* graphite */
   --color-muted: #6a685f; /* stone */
-  --color-faint: #9b998d; /* silver mist */
+  --color-faint: #7c7a6d; /* silver mist — darkened for AA legibility */
 
   /* ── Accents — refined botanical & mineral, used as marks not floods */
   --color-accent: #566b4f; /* deep sage — primary / positive */
@@ -67,7 +67,7 @@ body {
      (top-most, fixed, ~2%). The dark terminal panels are opaque, so grain
      only textures the light "reading" surfaces — a high-end magazine feel. */
   background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='0.2'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='0.04'/%3E%3C/svg%3E"),
     radial-gradient(1100px 560px at 12% -8%, color-mix(in oklab, var(--color-accent), transparent 93%), transparent 62%),
     radial-gradient(900px 480px at 100% -6%, color-mix(in oklab, var(--color-score), transparent 94%), transparent 58%);
   background-repeat: repeat, no-repeat, no-repeat;

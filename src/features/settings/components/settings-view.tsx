@@ -144,6 +144,7 @@ export function SettingsView() {
                   >
                     <Input
                       autoFocus
+                      aria-label="New website URL"
                       placeholder="newwebsite.com"
                       value={newUrl}
                       onChange={(e) => setNewUrl(e.target.value)}

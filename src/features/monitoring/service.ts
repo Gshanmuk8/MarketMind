@@ -312,7 +312,8 @@ export async function assessCompetitorThreat(competitorId: string) {
     task: "scoring",
     json: true,
     temperature: 0.2,
-    maxTokens: 400,
+    // Reasoning models lead the scoring chain — leave room or the JSON truncates.
+    maxTokens: 900,
     messages: [
       {
         role: "system",
