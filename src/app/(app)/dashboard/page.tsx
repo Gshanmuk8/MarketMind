@@ -35,9 +35,7 @@ export default async function DashboardPage() {
           <p className="font-data text-[11px] uppercase tracking-[0.28em] text-[var(--t-faint)]">
             First edition pending
           </p>
-          <h1 className="font-display mt-5 text-3xl text-[var(--t-text)] sm:text-4xl">
-            Your market, read for you
-          </h1>
+          <h1 className="display-3 mt-5 text-[var(--t-text)]">Your market, read for you</h1>
           <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-[var(--t-muted)]">
             Enter your website URL and MarketMind AI maps your market, discovers competitors, and
             begins monitoring — automatically.
@@ -202,7 +200,7 @@ export default async function DashboardPage() {
               <p className="font-data text-[11px] uppercase tracking-[0.24em] text-[var(--t-faint)]">
                 Monitoring
               </p>
-              <h3 className="font-display mt-3 text-2xl text-[var(--t-text)]">No signals yet</h3>
+              <h3 className="display-3 mt-3 text-[var(--t-text)]">No signals yet</h3>
               <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-[var(--t-muted)]">
                 {trackedCount > 0
                   ? "Monitoring is active. Observations land here as your market moves — each with why it matters and what to do."

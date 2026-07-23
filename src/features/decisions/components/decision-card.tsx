@@ -53,7 +53,7 @@ export function DecisionCard({ decision }: { decision: Decision }) {
   }
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-5 shadow-[var(--shadow-card)] transition-shadow duration-200 hover:shadow-[var(--shadow-lifted)]">
+    <div className="rounded-xl border border-border bg-surface p-6 shadow-[var(--shadow-card)] transition-[transform,box-shadow,border-color] duration-300 ease-[var(--ease-out-soft)] hover:-translate-y-px hover:border-border-strong/15 hover:shadow-[var(--shadow-lifted)]">
       <div className="flex items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2.5">
           <span className="flex items-center gap-1.5">

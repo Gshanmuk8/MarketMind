@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { Sparkline, trendGlyph } from "@/components/ui/sparkline";
 import { MetricTile } from "@/components/ui/metric-tile";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   useCompetitors,
@@ -343,21 +344,19 @@ function HoverCard({
 
       <div className="mt-3 flex gap-1.5">
         {c.status !== "TRACKING" && (
-          <button
-            disabled={pending}
-            onClick={() => onCurate("TRACKING")}
-            className="h-7 flex-1 rounded-md bg-ink-wash text-xs font-medium text-background transition-colors hover:bg-foreground disabled:opacity-50"
-          >
+          <Button size="sm" className="flex-1" disabled={pending} onClick={() => onCurate("TRACKING")}>
             Track
-          </button>
+          </Button>
         )}
-        <button
+        <Button
+          size="sm"
+          variant="secondary"
+          className="flex-1"
           disabled={pending}
           onClick={() => onCurate("DISMISSED")}
-          className="h-7 flex-1 rounded-md border border-border text-xs text-muted transition-colors hover:bg-surface-raised hover:text-foreground disabled:opacity-50"
         >
           Dismiss
-        </button>
+        </Button>
       </div>
     </div>
   );

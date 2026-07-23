@@ -185,7 +185,7 @@ export function NotificationsPanel() {
                 {channels.map((channel) => (
                   <div
                     key={channel.id}
-                    className="rounded-xl border border-border bg-surface p-4 shadow-[var(--shadow-card)] transition-all duration-200 hover:shadow-[var(--shadow-lifted)]"
+                    className="rounded-xl border border-border bg-surface p-5 shadow-[var(--shadow-card)] transition-[transform,box-shadow,border-color] duration-300 ease-[var(--ease-out-soft)] hover:-translate-y-px hover:border-border-strong/15 hover:shadow-[var(--shadow-lifted)]"
                   >
                     <div className="flex flex-wrap items-center gap-3">
                       <Badge variant={channel.enabled ? "live" : "default"}>

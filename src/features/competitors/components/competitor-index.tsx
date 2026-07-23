@@ -61,7 +61,7 @@ function CompetitorEntry({
       <div className="sm:col-span-3">
         <p className="microlabel mb-1.5">Threat</p>
         {competitor.threatScore != null ? (
-          <p className="font-display text-3xl text-score">{competitor.threatScore}</p>
+          <p className="font-data text-3xl tabular-nums text-score">{competitor.threatScore}</p>
         ) : (
           <p className="text-sm text-faint">Awaiting first assessment</p>
         )}
@@ -170,7 +170,7 @@ export function CompetitorIndex() {
   return (
     <div className="rise">
       {suggested.length > 0 && (
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <p className="microlabel">
             {suggested.length} suggested — track the ones that matter, or all of them
           </p>

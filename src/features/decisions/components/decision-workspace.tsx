@@ -78,7 +78,7 @@ export function DecisionWorkspace() {
     <div className="flex flex-col gap-14">
       {/* Open questions — the front of the war room */}
       <section>
-        <div className="mb-4 flex items-center justify-between border-b border-border pb-3">
+        <div className="mb-6 flex items-center justify-between border-b border-border pb-3">
           <div className="flex items-baseline gap-3">
             <h2 className="microlabel">Open questions</h2>
             {open.length > 0 && <span className="font-data text-xs text-faint">{open.length} live</span>}

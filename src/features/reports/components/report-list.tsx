@@ -89,7 +89,7 @@ export function ReportList() {
             <li key={report.id}>
               <Link
                 href={`/reports/${report.id}`}
-                className="group relative block h-full overflow-hidden rounded-xl border border-border bg-surface p-5 shadow-[var(--shadow-card)] transition-all duration-200 hover:-translate-y-px hover:border-border-strong/30 hover:shadow-[var(--shadow-lifted)]"
+                className="group relative block h-full overflow-hidden rounded-xl border border-border bg-surface p-6 shadow-[var(--shadow-card)] transition-[transform,box-shadow,border-color] duration-300 ease-[var(--ease-out-soft)] hover:-translate-y-px hover:border-border-strong/15 hover:shadow-[var(--shadow-lifted)]"
               >
                 {/* accent rail — the shared DNA */}
                 <span
