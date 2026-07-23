@@ -11,6 +11,7 @@ import { countSignalsSince } from "@/features/signals/service";
 import { RetryAnalysis } from "@/features/dashboard/components/retry-analysis";
 import { MarkSeen } from "@/features/dashboard/components/mark-seen";
 import { SignalMomentum } from "@/features/dashboard/components/signal-momentum";
+import { MarketQuery } from "@/features/dashboard/components/market-query";
 import { LAST_SEEN_COOKIE } from "@/features/dashboard/constants";
 
 export const metadata: Metadata = { title: "Dashboard" };
@@ -69,6 +70,9 @@ export default async function DashboardPage() {
       <MarkSeen />
       <TerminalShell>
         <TerminalHeader label="The Briefing" subtitle={company.name ?? company.domain} />
+
+        {/* Question-driven intelligence — ask the system, don't navigate it */}
+        <MarketQuery />
 
         {analyzing && (
           <div className="flex items-center gap-3 border-b border-[var(--t-line)] bg-[var(--t-accent)]/[0.04] px-5 py-4 sm:px-7">
@@ -145,7 +149,7 @@ export default async function DashboardPage() {
         <SignalMomentum data={momentum} />
 
         {/* Feed */}
-        <section aria-label="Latest intelligence">
+        <section id="latest-intelligence" aria-label="Latest intelligence">
           <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[var(--t-line)] px-5 py-3.5 sm:px-7">
             <div className="flex items-center gap-3">
               <h2 className="font-data text-[11px] uppercase tracking-[0.22em] text-[var(--t-muted)]">
