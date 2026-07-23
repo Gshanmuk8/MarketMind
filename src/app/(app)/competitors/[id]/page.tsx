@@ -94,14 +94,19 @@ export default async function CompetitorProfilePage({
 
   return (
     <div>
-      {/* One quiet way back — spatial memory, nothing more. The artifact below
-          names and explains itself; the environment stays silent. */}
-      <Link
-        href="/competitors"
-        className="microlabel mb-6 inline-flex items-center gap-1.5 text-muted transition-colors hover:text-foreground"
-      >
-        ← All competitors
-      </Link>
+      {/* Gallery label — the same rhythm every room uses: a way back, the
+          title (the entity itself), one line of what this is. The artifact
+          below carries the depth. */}
+      <div className="mb-8">
+        <Link
+          href="/competitors"
+          className="microlabel inline-flex items-center gap-1.5 text-muted transition-colors hover:text-foreground"
+        >
+          ← All competitors
+        </Link>
+        <h1 className="display-2 mt-4 break-words text-foreground">{competitor.name}</h1>
+        <p className="mt-2 text-[15px] leading-relaxed text-muted">Competitive intelligence dossier</p>
+      </div>
 
       <TerminalShell>
       <TerminalHeader label={`Dossier · ${competitor.domain}`} subtitle={competitor.name} />

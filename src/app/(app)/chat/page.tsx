@@ -9,7 +9,6 @@ export default function ChatPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Analyst"
         title="Strategy Chat"
         description="Ask anything. Answers are grounded in your market's live intelligence and cite their sources."
       />

@@ -23,7 +23,6 @@ export default async function TechnologyPage() {
     <>
       <LiveRefresh />
       <PageHeader
-        eyebrow="Signal Lab"
         title="Technology Intelligence"
         description="Frontier tech as it breaks — AI and AGI progress, quantum computing, major lab announcements — plus your competitors' engineering activity. Updates automatically."
       />

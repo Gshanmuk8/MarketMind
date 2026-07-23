@@ -10,7 +10,6 @@ export default function SettingsPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Control Room"
         title="Settings"
         description="Your account, your company profile, and the levers that control the machine."
       />

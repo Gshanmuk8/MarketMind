@@ -10,7 +10,6 @@ export default function CompetitorsPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Market Atlas"
         title="Competitors"
         description="AI-discovered competitors, mapped by threat and similarity. Track the ones that matter; dismiss the noise."
       />
