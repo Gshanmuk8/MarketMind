@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSessionUser } from "@/lib/session";
 import {
+  assertEmailRecipientOwned,
   deleteChannel,
   NotFoundError,
   sendTest,
@@ -39,6 +40,8 @@ export async function PATCH(request: Request, { params }: Params) {
         { status: result.ok ? 200 : 502 }
       );
     }
+    // A config edit must not repoint email delivery at someone else's address.
+    assertEmailRecipientOwned(parsed.data, user.email);
     const channel = await updateChannel(user.id, id, parsed.data);
     return NextResponse.json({ channel });
   } catch (error) {

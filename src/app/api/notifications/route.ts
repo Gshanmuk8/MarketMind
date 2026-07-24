@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/session";
 import { availableChannelTypes } from "@/features/notifications/delivery";
-import { createChannel, LimitError, listChannels } from "@/features/notifications/service";
+import {
+  assertEmailRecipientOwned,
+  createChannel,
+  LimitError,
+  listChannels,
+  ValidationError,
+} from "@/features/notifications/service";
 import { createChannelSchema } from "@/features/notifications/types";
 
 /** GET /api/notifications — the user's channels + which types can be added. */
@@ -36,9 +42,14 @@ export async function POST(request: Request) {
   }
 
   try {
+    // Never let a user relay mail to an address that isn't their own.
+    assertEmailRecipientOwned(parsed.data, user.email);
     const channel = await createChannel(user.id, parsed.data);
     return NextResponse.json({ channel }, { status: 201 });
   } catch (error) {
+    if (error instanceof ValidationError) {
+      return NextResponse.json({ error: error.message }, { status: 403 });
+    }
     if (error instanceof LimitError) {
       return NextResponse.json({ error: error.message }, { status: 409 });
     }

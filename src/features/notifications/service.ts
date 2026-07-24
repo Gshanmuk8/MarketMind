@@ -25,6 +25,24 @@ export class NotFoundError extends Error {}
 export class LimitError extends Error {}
 export class ValidationError extends Error {}
 
+/**
+ * Email delivery may only target the authenticated user's OWN account address.
+ * Without this, a user could point an email channel at any third party and use
+ * the product's trusted sender to relay unsolicited mail (spam / harassment).
+ * Telegram is self-limiting (a bot can only message chats that opted in), so
+ * this restriction is email-specific. No-op for non-email configs.
+ */
+export function assertEmailRecipientOwned(
+  input: { config?: unknown },
+  ownerEmail: string | undefined | null
+): void {
+  const recipient = (input.config as { email?: string } | undefined)?.email;
+  if (recipient == null) return; // not an email-config change
+  if (!ownerEmail || recipient.trim().toLowerCase() !== ownerEmail.trim().toLowerCase()) {
+    throw new ValidationError("Email delivery can only be sent to your own account email address.");
+  }
+}
+
 export async function listChannels(userId: string): Promise<NotificationChannel[]> {
   return db.notificationChannel.findMany({
     where: { userId },
