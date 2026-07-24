@@ -43,6 +43,19 @@ const envSchema = z.object({
   /// Verified Resend sender. The default only delivers to the Resend
   /// account owner's inbox — set a verified domain sender for production.
   EMAIL_FROM: z.string().default("MarketMind AI <onboarding@resend.dev>"),
+}).superRefine((val, ctx) => {
+  // In production the Inngest webhook (/api/inngest) is internet-reachable and
+  // drives privileged background work, so its signing key MUST be present or
+  // an attacker could POST forged jobs. Required at RUNTIME only — skip the
+  // build phase, where prod secrets aren't (and needn't be) available.
+  const isBuild = process.env.NEXT_PHASE === "phase-production-build";
+  if (!isBuild && val.NODE_ENV === "production" && !val.INNGEST_SIGNING_KEY) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["INNGEST_SIGNING_KEY"],
+      message: "Required in production — signs incoming Inngest webhook calls.",
+    });
+  }
 });
 
 const parsed = envSchema.safeParse(process.env);

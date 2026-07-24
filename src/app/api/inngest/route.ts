@@ -1,4 +1,5 @@
 import { serve } from "inngest/next";
+import { env } from "@/lib/env";
 
 // AI steps (analysis, enrichment, reports) exceed serverless defaults — take
 // the platform maximum so jobs don't die mid-step. Held at 60 (Vercel Hobby
@@ -20,6 +21,8 @@ import { instantAlertsJob } from "@/jobs/functions/instant-alerts";
 /** Inngest serve endpoint — register every background function here. */
 export const { GET, POST, PUT } = serve({
   client: inngest,
+  // Explicit signing key so incoming webhook calls are signature-verified.
+  signingKey: env.INNGEST_SIGNING_KEY,
   functions: [
     analyzeCompanyJob,
     runMonitorsJob,

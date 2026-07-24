@@ -13,7 +13,11 @@ import { env } from "@/lib/env";
  */
 export const inngest = new Inngest({
   id: "marketmind-ai",
-  isDev: env.NODE_ENV !== "production",
+  // Dev mode SKIPS incoming-webhook signature verification, so it must never
+  // engage on a reachable host. Any deploy with a signing key configured runs
+  // in Cloud mode (signatures enforced) regardless of NODE_ENV — only genuine
+  // local dev (no signing key, non-prod) talks to the Inngest Dev Server.
+  isDev: env.NODE_ENV !== "production" && !env.INNGEST_SIGNING_KEY,
   eventKey: env.INNGEST_EVENT_KEY || undefined,
 });
 
