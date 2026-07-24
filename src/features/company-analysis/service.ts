@@ -1,5 +1,6 @@
 import { ai } from "@/lib/ai";
 import { aiList, aiText, parseAiJson } from "@/lib/ai/json";
+import { safeFetch } from "@/lib/safe-fetch";
 
 /**
  * AI Company Understanding Engine.
@@ -159,7 +160,10 @@ export async function analyzeCompany(url: string, pageText: string): Promise<Com
  * TODO: replace with a proper crawler (multiple pages, pricing page, sitemap).
  */
 export async function fetchCompanyPage(url: string): Promise<string> {
-  const res = await fetch(url, {
+  // `safeFetch` (not plain fetch) so a user-supplied site — or any redirect it
+  // issues — can never point the server at cloud metadata, loopback, or an
+  // internal address (SSRF). It validates every hop's scheme + resolved IP.
+  const res = await safeFetch(url, {
     headers: {
       "User-Agent": "MarketMindBot/0.1 (+https://marketmind.ai)",
       Accept: "text/html,application/xhtml+xml",
@@ -167,7 +171,6 @@ export async function fetchCompanyPage(url: string): Promise<string> {
     },
     // A hanging site must not stall the onboarding pipeline.
     signal: AbortSignal.timeout(15_000),
-    redirect: "follow",
   });
   if (!res.ok) throw new Error(`Could not fetch ${url}: ${res.status}`);
   // Guard against multi-hundred-MB responses buffering into memory.
