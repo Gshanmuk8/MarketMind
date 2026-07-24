@@ -11,11 +11,12 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // The app renders no next/image, so the built-in image optimizer is pure
+  // attack surface: a wildcard remote host would let /_next/image fetch and
+  // run libvips/sharp over attacker-controlled images (SSRF + CVE surface).
+  // Deny all remote images — nothing legitimate uses it.
   images: {
-    remotePatterns: [
-      // Competitor logos and favicons are served from arbitrary public domains.
-      { protocol: "https", hostname: "**" },
-    ],
+    remotePatterns: [],
   },
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];
